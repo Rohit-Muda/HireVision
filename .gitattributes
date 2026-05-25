@@ -1,0 +1,14 @@
+# Normalize line endings to LF on all platforms
+* text=auto eol=lf
+
+# Binary files — never touch line endings
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.svg text eol=lf
+*.webm binary
+*.mp4 binary
+*.mov binary

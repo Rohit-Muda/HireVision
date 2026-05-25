@@ -1,0 +1,24 @@
+# ─── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+
+# ─── Environment secrets ──────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+
+# ─── Firebase Service Account key (if downloaded locally) ─────────────────────
+*-firebase-adminsdk-*.json
+serviceAccount*.json
+firebase-service-account.json
+
+# ─── Build output ─────────────────────────────────────────────────────────────
+dist/
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+
+# ─── OS files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
