@@ -5,21 +5,37 @@ const os = require('os');
 const path = require('path');
 
 // ─── Model fallback chain ────────────────────────────────────────────────────
-// If one model's quota is hit (429), we try the next.
 // Each model has SEPARATE per-model quotas on the free tier.
-const VIDEO_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-2.0-flash-lite',
-];
-
+// NOTE: gemini-1.5-* models are deprecated — do NOT use them.
 const TEXT_MODELS = [
   'gemini-2.0-flash',
-  'gemini-1.5-flash',
+  'gemini-2.5-flash',
   'gemini-2.0-flash-lite',
 ];
 
+// ─── System prompts ──────────────────────────────────────────────────────────
+
 const SYSTEM_INSTRUCTION = `You are an expert HR analyst and career coach. You analyze video resumes with deep attention to both content and delivery. You are fair, unbiased, and provide constructive assessments. Always respond with valid JSON only, no markdown formatting, no code blocks.`;
+
+const TRANSCRIPT_ANALYSIS_PROMPT = `You are given the verbatim transcript from a candidate's 60-second video resume. Analyze it carefully.
+
+Return a JSON object with these exact fields:
+{
+  "skills": ["<skill1>", "<skill2>", "<skill3>"],
+  "experienceSummary": "<2-3 sentences describing their experience level and background>",
+  "communicationScore": <integer 1-10>,
+  "confidenceIndicators": "<brief assessment of clarity, structure, and communication quality based on the transcript>",
+  "aiSummary": "<A compelling 2-line professional summary in third person. Example: 'Experienced React developer with 3 years of hands-on project work. Demonstrates strong problem-solving ability and clear communication style.'>"
+}
+
+Scoring guide for communicationScore (judge from the transcript text quality):
+- 9-10: Exceptionally clear, well-structured sentences, minimal filler words, specific examples
+- 7-8: Clear and organized, good vocabulary, minor hesitations or fillers
+- 5-6: Understandable but some rambling, noticeable filler words or vague statements
+- 3-4: Difficult to follow, very short, disorganized, or mostly filler
+- 1-2: Barely communicative, single words or incoherent
+
+If the transcript is empty or too short to analyze, return skills as empty array and score as 0.`;
 
 const VIDEO_ANALYSIS_PROMPT = `Analyze this candidate's video resume carefully. Watch their delivery, listen to their content, and evaluate both what they say and how they say it.
 
@@ -30,7 +46,7 @@ Return a JSON object with these exact fields:
   "experienceSummary": "<2-3 sentences describing their experience level and background>",
   "communicationScore": <integer 1-10>,
   "confidenceIndicators": "<brief assessment of confidence, clarity, pacing>",
-  "aiSummary": "<A compelling 2-line professional summary in third person. Example: 'Experienced React developer with 3 years of hands-on project work. Demonstrates strong problem-solving ability and clear communication style.'>"
+  "aiSummary": "<A compelling 2-line professional summary in third person.>"
 }
 
 Scoring guide for communicationScore:
@@ -44,23 +60,45 @@ If the video has no speech, return empty transcript and score of 0.`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Sleep for ms milliseconds */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** Parse a retry delay from a Gemini 429 error message */
 const parseRetryDelay = (errorMessage) => {
   const match = errorMessage?.match(/retry\s*in\s*(\d+(?:\.\d+)?)\s*s/i);
-  return match ? Math.ceil(parseFloat(match[1]) * 1000) + 2000 : 25000; // default 25s
+  return match ? Math.ceil(parseFloat(match[1]) * 1000) + 2000 : 25000;
 };
 
-/** Check if error is a retryable 429 quota error */
 const isQuotaError = (err) => {
   const msg = err?.message || '';
   return msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')
     || msg.includes('RESOURCE_EXHAUSTED');
 };
 
-// Singleton FileManager
+const parseGeminiJSON = (text) => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    throw new Error(`Failed to parse Gemini response as JSON. Raw: ${text.substring(0, 200)}`);
+  }
+};
+
+const normalizeAnalysis = (parsed, modelName) => ({
+  transcript: parsed.transcript || '',
+  skills: Array.isArray(parsed.skills) ? parsed.skills : [],
+  experienceSummary: parsed.experienceSummary || '',
+  communicationScore:
+    typeof parsed.communicationScore === 'number'
+      ? Math.min(10, Math.max(0, Math.round(parsed.communicationScore)))
+      : 0,
+  confidenceIndicators: parsed.confidenceIndicators || '',
+  aiSummary: parsed.aiSummary || '',
+  modelUsed: modelName,
+  analysisMode: parsed._analysisMode || 'unknown',
+  error: parsed.error || null,
+});
+
+// ─── Singleton FileManager ────────────────────────────────────────────────────
 let _fileManager = null;
 const getFileManager = () => {
   if (!_fileManager) {
@@ -69,21 +107,75 @@ const getFileManager = () => {
   return _fileManager;
 };
 
-// ─── File Upload ──────────────────────────────────────────────────────────────
+// ─── PRIMARY: Text-only transcript analysis (~200-500 tokens) ─────────────────
+// This is 100x cheaper than video analysis and works with free tier easily.
 
 /**
- * Upload a video buffer to the Gemini File API.
- * @param {Buffer} videoBuffer
- * @param {string} mimeType
- * @returns {Promise<string>} Gemini file URI
+ * Analyze a candidate from their speech transcript (text-only).
+ * Uses ~200-500 input tokens vs ~50,000+ for video.
+ * @param {string} transcript - verbatim speech text captured via Web Speech API
+ * @returns {Promise<Object>} analysis object
  */
+const analyzeTranscript = async (transcript) => {
+  if (!transcript || transcript.trim().length < 10) {
+    return normalizeAnalysis({
+      transcript: transcript || '',
+      skills: [],
+      experienceSummary: '',
+      communicationScore: 0,
+      confidenceIndicators: 'Insufficient speech detected.',
+      aiSummary: 'No meaningful speech was captured in the video.',
+      _analysisMode: 'transcript-empty',
+    }, 'none');
+  }
+
+  const genAI = getGenAI();
+  const prompt = `Here is the candidate's speech transcript from their 60-second video resume:\n\n"${transcript}"\n\n${TRANSCRIPT_ANALYSIS_PROMPT}`;
+
+  const errors = [];
+  for (const modelName of TEXT_MODELS) {
+    try {
+      console.log(`📝 Analyzing transcript with ${modelName} (~${prompt.length} chars)...`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: SYSTEM_INSTRUCTION,
+      });
+
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      });
+
+      const text = result.response.text();
+      console.log(`✅ ${modelName} responded (transcript analysis)`);
+
+      const parsed = parseGeminiJSON(text);
+      parsed.transcript = transcript; // keep the original transcript
+      parsed._analysisMode = 'transcript';
+      return normalizeAnalysis(parsed, modelName);
+    } catch (err) {
+      errors.push({ model: modelName, error: err.message });
+      console.warn(`⚠️  ${modelName} failed: ${err.message.substring(0, 120)}`);
+
+      if (isQuotaError(err)) {
+        const delay = parseRetryDelay(err.message);
+        console.log(`   ⏳ Quota hit on ${modelName}, waiting ${(delay / 1000).toFixed(0)}s...`);
+        await sleep(delay);
+      }
+    }
+  }
+
+  const errorSummary = errors.map(e => `${e.model}: ${e.error.substring(0, 80)}`).join(' | ');
+  throw new Error(`All Gemini models exhausted for transcript analysis. ${errorSummary}`);
+};
+
+// ─── FALLBACK: Full video analysis (expensive, ~50K tokens) ───────────────────
+// Only used if browser Speech API is unavailable (Firefox, Safari).
+
 const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
   const extMap = {
-    'video/webm': 'webm',
-    'video/mp4': 'mp4',
-    'video/quicktime': 'mov',
-    'video/x-msvideo': 'avi',
-    'video/ogg': 'ogv',
+    'video/webm': 'webm', 'video/mp4': 'mp4', 'video/quicktime': 'mov',
+    'video/x-msvideo': 'avi', 'video/ogg': 'ogv',
   };
   const ext = extMap[mimeType] || 'webm';
   const tmpPath = path.join(os.tmpdir(), `hv_${Date.now()}.${ext}`);
@@ -101,7 +193,6 @@ const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
     let file = uploadResult.file;
     console.log(`📂 Gemini file state: ${file.state}, waiting for ACTIVE...`);
 
-    // Poll until ACTIVE
     let attempts = 0;
     while (file.state === FileState.PROCESSING && attempts < 30) {
       await sleep(3000);
@@ -121,100 +212,58 @@ const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
   }
 };
 
-// ─── Video Analysis (with retry + model fallback) ─────────────────────────────
-
 /**
- * Analyze a video resume. Tries each model in VIDEO_MODELS until one succeeds.
- * On 429 errors, waits the specified retry delay before trying the next model.
- * @param {Buffer} videoBuffer
- * @param {string} mimeType
- * @returns {Promise<Object>} analysis object
+ * Full video analysis via Gemini File API (expensive).
+ * Use only when transcript is not available.
  */
 const analyzeVideo = async (videoBuffer, mimeType = 'video/webm') => {
   const genAI = getGenAI();
-
-  // Step 1: Upload to Gemini File API (shared across all models)
   const fileUri = await uploadBufferToGeminiFileApi(videoBuffer, mimeType);
 
-  // Step 2: Try each model in order
   const errors = [];
-  for (const modelName of VIDEO_MODELS) {
+  for (const modelName of TEXT_MODELS) {
     try {
-      console.log(`🤖 Trying model: ${modelName}...`);
+      console.log(`🎬 Trying video analysis with ${modelName}...`);
       const model = genAI.getGenerativeModel({
         model: modelName,
         systemInstruction: SYSTEM_INSTRUCTION,
       });
 
       const result = await model.generateContent({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { fileData: { mimeType, fileUri } },
-              { text: VIDEO_ANALYSIS_PROMPT },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-        },
+        contents: [{
+          role: 'user',
+          parts: [
+            { fileData: { mimeType, fileUri } },
+            { text: VIDEO_ANALYSIS_PROMPT },
+          ],
+        }],
+        generationConfig: { responseMimeType: 'application/json' },
       });
 
       const text = result.response.text();
-      console.log(`✅ ${modelName} responded successfully`);
+      console.log(`✅ ${modelName} responded (video analysis)`);
 
-      let parsed;
-      try {
-        parsed = JSON.parse(text);
-      } catch (parseErr) {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]);
-        } else {
-          throw new Error(`Failed to parse ${modelName} response as JSON. Raw: ${text.substring(0, 200)}`);
-        }
-      }
-
-      return {
-        transcript: parsed.transcript || '',
-        skills: Array.isArray(parsed.skills) ? parsed.skills : [],
-        experienceSummary: parsed.experienceSummary || '',
-        communicationScore:
-          typeof parsed.communicationScore === 'number'
-            ? Math.min(10, Math.max(0, Math.round(parsed.communicationScore)))
-            : 0,
-        confidenceIndicators: parsed.confidenceIndicators || '',
-        aiSummary: parsed.aiSummary || '',
-        modelUsed: modelName,
-        error: parsed.error || null,
-      };
+      const parsed = parseGeminiJSON(text);
+      parsed._analysisMode = 'video';
+      return normalizeAnalysis(parsed, modelName);
     } catch (err) {
       errors.push({ model: modelName, error: err.message });
       console.warn(`⚠️  ${modelName} failed: ${err.message.substring(0, 120)}`);
 
       if (isQuotaError(err)) {
         const delay = parseRetryDelay(err.message);
-        console.log(`   ⏳ Quota hit on ${modelName}. Waiting ${(delay / 1000).toFixed(0)}s before trying next model...`);
+        console.log(`   ⏳ Quota hit on ${modelName}, waiting ${(delay / 1000).toFixed(0)}s...`);
         await sleep(delay);
       }
-      // Continue to next model
     }
   }
 
-  // All models failed — throw with details
   const errorSummary = errors.map(e => `${e.model}: ${e.error.substring(0, 80)}`).join(' | ');
-  throw new Error(
-    `All Gemini models exhausted. This usually means your API key's daily free-tier quota is used up. ` +
-    `It resets at midnight Pacific Time. Details: ${errorSummary}`
-  );
+  throw new Error(`All Gemini models exhausted. Quota resets at midnight PT. ${errorSummary}`);
 };
 
-// ─── Match Explanation (with retry + model fallback) ──────────────────────────
+// ─── Match Explanation (with fallback) ────────────────────────────────────────
 
-/**
- * Generate a match explanation using Gemini (text-only, lightweight).
- */
 const generateMatchExplanation = async (candidateSkills, jobSkills, score) => {
   const genAI = getGenAI();
 
@@ -252,4 +301,4 @@ Be specific about strengths and gaps. Do not be generic.`;
     : `Limited overlap. Missing: ${missing.join(', ')}.`;
 };
 
-module.exports = { analyzeVideo, generateMatchExplanation };
+module.exports = { analyzeTranscript, analyzeVideo, generateMatchExplanation };

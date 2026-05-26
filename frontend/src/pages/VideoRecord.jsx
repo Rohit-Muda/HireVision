@@ -6,13 +6,13 @@ import { Video, Square, RotateCcw, Zap, Upload, CheckCircle, Loader2, AlertCircl
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
-// ─── Analysis steps with realistic durations ──────────────────────────────────
+// ─── Analysis steps ───────────────────────────────────────────────────────────
 const STEPS = [
-  { label: 'Uploading your video securely...', icon: '☁️' },
-  { label: 'Gemini AI is watching your video...', icon: '👁️' },
+  { label: 'Uploading your video...', icon: '☁️' },
+  { label: 'AI analyzing your speech...', icon: '🧠' },
   { label: 'Extracting skills & experience...', icon: '⚡' },
   { label: 'Scoring communication quality...', icon: '📊' },
-  { label: 'Building your profile embedding...', icon: '🧠' },
+  { label: 'Building your profile embedding...', icon: '🔗' },
 ];
 
 // ─── Circular countdown ring ──────────────────────────────────────────────────
@@ -102,6 +102,12 @@ const VideoRecord = () => {
   const [completedSteps, setCompletedSteps] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  // ── Web Speech API for real-time transcript ─────────────────────────────────
+  const speechRecRef = useRef(null);
+  const transcriptRef = useRef(''); // accumulated transcript (avoids stale closure)
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const speechSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
   // ── Camera init ─────────────────────────────────────────────────────────────
   const initCamera = useCallback(async () => {
     try {
@@ -163,7 +169,46 @@ const VideoRecord = () => {
     mr.start(100);
     mediaRecorderRef.current = mr;
     setElapsed(0);
+    setLiveTranscript('');
+    transcriptRef.current = '';
     setPhase('recording');
+
+    // ── Start speech recognition alongside recording ────────────────────────
+    if (speechSupported) {
+      try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event) => {
+          let finalText = '';
+          let interimText = '';
+          for (let i = 0; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              finalText += result[0].transcript + ' ';
+            } else {
+              interimText += result[0].transcript;
+            }
+          }
+          transcriptRef.current = finalText.trim();
+          setLiveTranscript((finalText + interimText).trim());
+        };
+
+        recognition.onerror = (e) => {
+          console.warn('SpeechRecognition error:', e.error);
+          // Non-fatal — we still have the video as fallback
+        };
+
+        recognition.start();
+        speechRecRef.current = recognition;
+        console.log('🎙️ Speech recognition started');
+      } catch (e) {
+        console.warn('Could not start speech recognition:', e);
+      }
+    }
 
     timerIntervalRef.current = setInterval(() => {
       elapsedRef.current += 1;
@@ -173,6 +218,10 @@ const VideoRecord = () => {
         if (mediaRecorderRef.current?.state !== 'inactive') {
           mediaRecorderRef.current.stop();
         }
+        // Stop speech recognition when time is up
+        if (speechRecRef.current) {
+          try { speechRecRef.current.stop(); } catch (_) {}
+        }
       }
     }, 1000);
   };
@@ -181,6 +230,11 @@ const VideoRecord = () => {
     clearInterval(timerIntervalRef.current);
     if (mediaRecorderRef.current?.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+    }
+    // Stop speech recognition
+    if (speechRecRef.current) {
+      try { speechRecRef.current.stop(); } catch (_) {}
+      console.log('🎙️ Speech recognition stopped. Transcript:', transcriptRef.current.length, 'chars');
     }
     // Don't stop stream here — reRecord() needs it
   };
@@ -192,23 +246,25 @@ const VideoRecord = () => {
     setElapsed(0);
     setCompletedSteps([]);
     setUploadProgress(0);
+    setLiveTranscript('');
+    transcriptRef.current = '';
     setPhase('idle');
     if (videoRef.current) videoRef.current.src = '';
     await initCamera();
   };
 
   // ── AI Analysis ─────────────────────────────────────────────────────────────
-  const analyzeVideo = async () => {
+  const submitForAnalysis = async () => {
     if (!videoBlob) return;
     setPhase('analyzing');
     setAnalysisStep(0);
     setCompletedSteps([]);
     setUploadProgress(0);
 
-    // Animate steps sequentially (decorative — real progress tracked separately)
-    const stepTimings = [0, 5000, 20000, 35000, 50000];
+    // Animate steps sequentially (decorative)
+    const stepTimings = [0, 3000, 8000, 14000, 20000];
     stepTimings.forEach((delay, i) => {
-      if (i === 0) return; // step 0 starts immediately
+      if (i === 0) return;
       setTimeout(() => {
         setCompletedSteps(prev => [...prev, i - 1]);
         setAnalysisStep(i);
@@ -219,6 +275,15 @@ const VideoRecord = () => {
       const ext = videoBlob.type.includes('mp4') ? 'mp4' : videoBlob.type.includes('mov') ? 'mov' : 'webm';
       const formData = new FormData();
       formData.append('video', videoBlob, `resume.${ext}`);
+
+      // ✅ Attach browser transcript — backend uses text-only analysis (100x cheaper)
+      const capturedTranscript = transcriptRef.current.trim();
+      if (capturedTranscript) {
+        formData.append('transcript', capturedTranscript);
+        console.log('📝 Sending browser transcript:', capturedTranscript.length, 'chars');
+      } else {
+        console.log('⚠️ No browser transcript — backend will use full video analysis');
+      }
 
       const res = await api.post('/candidates/analyze-video', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -264,7 +329,7 @@ const VideoRecord = () => {
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-300 text-sm font-medium mb-4">
             <Zap className="w-3.5 h-3.5" />
-            Powered by Gemini 2.5 Flash
+            Powered by Gemini AI
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
             Record Your{' '}
@@ -273,6 +338,9 @@ const VideoRecord = () => {
             </span>
           </h1>
           <p className="text-slate-400">60 seconds. AI does the rest — skills, scores, job matches.</p>
+          {speechSupported && (
+            <p className="text-xs text-emerald-400/60 mt-1">🎙️ Live speech capture enabled — saves 100x on AI costs</p>
+          )}
         </motion.div>
 
         {/* Permission Error */}
@@ -366,6 +434,17 @@ const VideoRecord = () => {
                   transition={{ duration: 0.5 }}
                 />
               </div>
+
+              {/* Live transcript preview */}
+              {liveTranscript && (
+                <div className="absolute bottom-3 left-4 right-4">
+                  <div className="bg-black/70 backdrop-blur-sm rounded-xl px-3 py-2 max-h-16 overflow-hidden">
+                    <p className="text-white/80 text-xs leading-relaxed truncate">
+                      🎙️ {liveTranscript.slice(-120)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -495,7 +574,7 @@ const VideoRecord = () => {
                   Re-record
                 </button>
                 <button
-                  onClick={analyzeVideo}
+                  onClick={submitForAnalysis}
                   className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-brand-600 to-violet-600 text-white font-bold text-lg hover:shadow-lg hover:shadow-brand-500/25 hover:scale-105 active:scale-100 transition-all duration-200"
                 >
                   <Zap className="w-5 h-5" />

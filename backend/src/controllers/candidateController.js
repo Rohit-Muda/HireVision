@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const { uploadToStorage } = require('../services/storageService');
-const { analyzeVideo } = require('../services/aiService');
+const { analyzeTranscript, analyzeVideo } = require('../services/aiService');
 const { generateEmbedding, buildCandidateEmbeddingText } = require('../services/embeddingService');
 
 // POST /api/candidates/analyze-video
@@ -25,26 +25,35 @@ const analyzeVideoResume = async (req, res, next) => {
     const ext = extMap[mimeType] || 'webm';
     const destination = `videos/${uid}/${timestamp}.${ext}`;
 
-    // Step 1: Run AI analysis FIRST (uses the buffer directly via Gemini File API)
-    // This avoids the failed pattern of passing a Firebase Storage URL to Gemini,
-    // which Gemini's fileData part does not support.
+    // ─── Step 1: AI Analysis ─────────────────────────────────────────────────
+    // STRATEGY: Use transcript from browser Speech API (text-only, ~200 tokens)
+    // instead of sending raw video (50,000+ tokens). 100x cheaper.
+    // Falls back to video analysis only if no transcript provided.
     let analysis;
+    const browserTranscript = req.body?.transcript?.trim();
+
     try {
-      console.log(`🤖 Starting Gemini video analysis (${(req.file.buffer.length / 1024 / 1024).toFixed(2)} MB)...`);
-      analysis = await analyzeVideo(req.file.buffer, mimeType);
-      console.log(`✅ Gemini analysis complete (model: ${analysis.modelUsed || 'unknown'})`);
+      if (browserTranscript && browserTranscript.length >= 10) {
+        // ✅ PRIMARY: Text-only analysis — cheap and fast
+        console.log(`📝 Using browser transcript (${browserTranscript.length} chars) — text-only AI analysis`);
+        analysis = await analyzeTranscript(browserTranscript);
+      } else {
+        // ⚠️ FALLBACK: Full video analysis — expensive, uses lots of tokens
+        console.log(`🎬 No browser transcript — falling back to full video analysis (${(req.file.buffer.length / 1024 / 1024).toFixed(2)} MB)...`);
+        analysis = await analyzeVideo(req.file.buffer, mimeType);
+      }
+      console.log(`✅ AI analysis complete (mode: ${analysis.analysisMode}, model: ${analysis.modelUsed})`);
     } catch (err) {
-      console.error('Gemini analysis failed:', err.message);
-      // Distinguish quota errors from real failures
+      console.error('AI analysis failed:', err.message);
       const isQuota = err.message.includes('quota') || err.message.includes('exhausted');
       const status = isQuota ? 429 : 500;
       const userMsg = isQuota
-        ? 'AI quota temporarily exceeded. Your free-tier resets at midnight PT. Please try again in a few minutes, or use a different API key.'
+        ? 'AI quota temporarily exceeded. Please try again in a few minutes.'
         : `AI analysis failed: ${err.message}`;
       return res.status(status).json({ error: userMsg, retryable: isQuota });
     }
 
-    // Step 2: Upload to Firebase Storage (for archiving / playback)
+    // ─── Step 2: Upload video to Firebase Storage (for recruiter playback) ──
     let publicUrl = null;
     try {
       publicUrl = await uploadToStorage(req.file.buffer, destination, mimeType);
@@ -73,7 +82,7 @@ const analyzeVideoResume = async (req, res, next) => {
       });
     }
 
-    // Step 3: Generate embedding for job matching
+    // ─── Step 3: Generate embedding for job matching ─────────────────────────
     let profileEmbedding = [];
     try {
       const embeddingText = buildCandidateEmbeddingText(analysis.skills, analysis.aiSummary);
@@ -83,7 +92,7 @@ const analyzeVideoResume = async (req, res, next) => {
       console.warn('Embedding generation failed (non-fatal):', err.message);
     }
 
-    // Step 4: Persist to MongoDB
+    // ─── Step 4: Persist to MongoDB ──────────────────────────────────────────
     const updateData = {
       videoUrl: publicUrl,
       videoTranscript: analysis.transcript,
