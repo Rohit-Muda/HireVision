@@ -6,6 +6,13 @@ Built for the problem that traditional resumes don't show communication skills, 
 
 ---
 
+## 🌍 Live Deployment
+- **Frontend (Vercel):** [https://hire-vision-3arjxnulx-rohit-mudas-projects.vercel.app](https://hire-vision-3arjxnulx-rohit-mudas-projects.vercel.app)
+- **Backend (Google Cloud Run):** [https://hirevision-backend-969140599829.asia-south1.run.app](https://hirevision-backend-969140599829.asia-south1.run.app)
+- **Database:** MongoDB Atlas (Production Cluster)
+
+---
+
 ## What It Does
 
 **For Candidates:**
@@ -37,7 +44,7 @@ Built for the problem that traditional resumes don't show communication skills, 
 | Vector Matching | text-embedding-004 (768-dim), cosine similarity |
 | Auth | Firebase Authentication |
 | Storage | Firebase Storage (video files + PDF resumes) |
-| Deployment | Vercel (frontend) + Railway (backend) |
+| Deployment | Vercel (frontend) + Google Cloud Run (backend) |
 
 ---
 
@@ -205,8 +212,7 @@ HireVision/
     │   ├── models/            # Mongoose schemas
     │   ├── routes/            # Express routers
     │   └── services/          # AI, embeddings, matching, storage
-    ├── Dockerfile
-    └── railway.json
+    └── Dockerfile
 ```
 
 ---
@@ -237,15 +243,24 @@ HireVision/
 **Frontend → Vercel**
 1. Import the repo in [vercel.com](https://vercel.com)
 2. Set root directory to `frontend`
-3. Add all `VITE_*` environment variables
+3. Add all `VITE_*` environment variables (make sure `VITE_API_URL` points to your deployed backend)
 4. Deploy — `vercel.json` handles SPA routing automatically
 
-**Backend → Railway**
-1. Import the repo in [railway.app](https://railway.app)
-2. Set root directory to `backend`
-3. Railway auto-detects the `Dockerfile`
-4. Add all backend environment variables
-5. Deploy — `railway.json` configures health checks and restart policy
+**Backend → Google Cloud Run**
+1. Build the Docker image and push it to Google Artifact Registry:
+   ```bash
+   gcloud builds submit --tag asia-south1-docker.pkg.dev/YOUR_PROJECT_ID/hirevision/backend:latest .
+   ```
+2. Deploy the container to Cloud Run:
+   ```bash
+   gcloud run deploy hirevision-backend \
+     --image asia-south1-docker.pkg.dev/YOUR_PROJECT_ID/hirevision/backend:latest \
+     --platform managed \
+     --region asia-south1 \
+     --allow-unauthenticated \
+     --set-env-vars "NODE_ENV=production,MONGODB_URI=...,GEMINI_API_KEY=...,CORS_ORIGIN=*"
+   ```
+3. Cloud Run automatically manages scaling, HTTPS, and health checks.
 
 ---
 
