@@ -19,7 +19,10 @@ const PORT = process.env.PORT || 8080;
 // ─── Security & CORS ─────────────────────────────────────────────────────────
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
+  origin: (origin, callback) => {
+    // Dynamic origin mirroring to support credentials: true with any origin
+    callback(null, true);
+  },
   credentials: true,
 }));
 
