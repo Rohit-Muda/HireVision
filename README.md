@@ -220,25 +220,25 @@ cd frontend && npm test
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | ❌ | Register a new candidate or recruiter |
-| `POST` | `/api/auth/login` | ❌ | Login, returns Firebase ID token |
-| `GET` | `/api/auth/me` | ✅ | Get current verified user profile |
-| `POST` | `/api/candidates/analyze-video` | ✅ Candidate | Upload video resume & transcript → AI analysis (limit: 10/hr) |
-| `GET` | `/api/candidates/:id/profile` | ❌ | Retrieve public candidate profile info |
-| `GET` | `/api/candidates/search` | ❌ | Search / filter candidates list |
-| `GET` | `/api/jobs` | ❌ | Query/filter open jobs (supports search, type, experience filtering) |
-| `GET` | `/api/jobs/recruiter/mine` | ✅ Recruiter | Fetch all jobs posted by the logged-in recruiter |
-| `POST` | `/api/jobs` | ✅ Recruiter | Create a new job post and auto-generate its embedding |
-| `GET` | `/api/jobs/:id` | ❌ | Get full details of a specific job post |
-| `GET` | `/api/jobs/:id/candidates` | ✅ Recruiter | Fetch AI-ranked candidates matching the job's required skills |
-| `POST` | `/api/applications` | ✅ Candidate | Submit a new job application |
-| `GET` | `/api/applications/candidate/:candidateId` | ✅ | List all applications submitted by a candidate |
-| `GET` | `/api/applications/job/:jobId` | ✅ Recruiter | List all applications for a job grouped by Kanban columns |
-| `PATCH` | `/api/applications/:id/stage` | ✅ Recruiter | Move application to another pipeline stage (Kanban drag-and-drop) |
-| `GET` | `/api/applications/recruiter/stats` | ✅ Recruiter | Fetch general hiring stats (jobs count, applications count, average match) |
-| `PUT` | `/api/recruiters/profile` | ✅ Recruiter | Update recruiter profile (companyName, companyLogo, companyDescription) |
-| `GET` | `/api/health` | ❌ | Server health status, timestamp, and MongoDB connectivity indicator |
-| `POST` | `/api/seed` | ❌ | Re-seed MongoDB database with jobs, recruiters, and pre-computed candidates |
+| `POST` | `/api/auth/register` | Public | Register a new candidate or recruiter |
+| `POST` | `/api/auth/login` | Public | Login, returns Firebase ID token |
+| `GET` | `/api/auth/me` | Required | Get current verified user profile |
+| `POST` | `/api/candidates/analyze-video` | Required (Candidate) | Upload video resume & transcript → AI analysis (limit: 10/hr) |
+| `GET` | `/api/candidates/:id/profile` | Public | Retrieve public candidate profile info |
+| `GET` | `/api/candidates/search` | Public | Search / filter candidates list |
+| `GET` | `/api/jobs` | Public | Query/filter open jobs (supports search, type, experience filtering) |
+| `GET` | `/api/jobs/recruiter/mine` | Required (Recruiter) | Fetch all jobs posted by the logged-in recruiter |
+| `POST` | `/api/jobs` | Required (Recruiter) | Create a new job post and auto-generate its embedding |
+| `GET` | `/api/jobs/:id` | Public | Get full details of a specific job post |
+| `GET` | `/api/jobs/:id/candidates` | Required (Recruiter) | Fetch AI-ranked candidates matching the job's required skills |
+| `POST` | `/api/applications` | Required (Candidate) | Submit a new job application |
+| `GET` | `/api/applications/candidate/:candidateId` | Required | List all applications submitted by a candidate |
+| `GET` | `/api/applications/job/:jobId` | Required (Recruiter) | List all applications for a job grouped by Kanban columns |
+| `PATCH` | `/api/applications/:id/stage` | Required (Recruiter) | Move application to another pipeline stage (Kanban drag-and-drop) |
+| `GET` | `/api/applications/recruiter/stats` | Required (Recruiter) | Fetch general hiring stats (jobs count, applications count, average match) |
+| `PUT` | `/api/recruiters/profile` | Required (Recruiter) | Update recruiter profile (companyName, companyLogo, companyDescription) |
+| `GET` | `/api/health` | Public | Server health status, timestamp, and MongoDB connectivity indicator |
+| `POST` | `/api/seed` | Public | Re-seed MongoDB database with jobs, recruiters, and pre-computed candidates |
 
 ---
 
