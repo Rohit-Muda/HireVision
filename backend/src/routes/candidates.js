@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { analyzeVideoResume, getCandidateProfile, searchCandidates } = require('../controllers/candidateController');
+const { analyzeVideoResume, getCandidateProfile, searchCandidates, uploadResume } = require('../controllers/candidateController');
 const { verifyFirebaseToken } = require('../middleware/auth');
-const { videoUpload } = require('../middleware/upload');
+const { videoUpload, pdfUpload } = require('../middleware/upload');
 const rateLimit = require('express-rate-limit');
 
 const videoAnalysisLimiter = rateLimit({
@@ -24,6 +24,12 @@ router.post(
   videoAnalysisLimiter,
   videoUpload.single('video'),
   analyzeVideoResume
+);
+router.post(
+  '/upload-resume',
+  verifyFirebaseToken,
+  pdfUpload.single('resume'),
+  uploadResume
 );
 router.get('/:id/profile', getCandidateProfile);
 

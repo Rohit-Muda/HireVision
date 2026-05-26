@@ -272,9 +272,21 @@ const VideoRecord = () => {
     });
 
     try {
-      const ext = videoBlob.type.includes('mp4') ? 'mp4' : videoBlob.type.includes('mov') ? 'mov' : 'webm';
+      // ── Determine MIME type explicitly (MediaRecorder may produce empty type) ──
+      // If blob type is empty string, browsers send it as text/plain via FormData.
+      // Force an explicit MIME type to ensure multer accepts it.
+      const blobMime = videoBlob.type && videoBlob.type !== ''
+        ? videoBlob.type
+        : 'video/webm';
+      const ext = blobMime.includes('mp4') ? 'mp4' : blobMime.includes('mov') ? 'mov' : 'webm';
+
+      // Create a typed blob so FormData sends the correct Content-Type part header
+      const typedBlob = blobMime === videoBlob.type
+        ? videoBlob
+        : new Blob([videoBlob], { type: blobMime });
+
       const formData = new FormData();
-      formData.append('video', videoBlob, `resume.${ext}`);
+      formData.append('video', typedBlob, `resume.${ext}`);
 
       // ✅ Attach browser transcript — backend uses text-only analysis (100x cheaper)
       const capturedTranscript = transcriptRef.current.trim();
@@ -327,10 +339,6 @@ const VideoRecord = () => {
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-300 text-sm font-medium mb-4">
-            <Zap className="w-3.5 h-3.5" />
-            Powered by Gemini AI
-          </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
             Record Your{' '}
             <span className="bg-gradient-to-r from-brand-400 to-violet-400 bg-clip-text text-transparent">
@@ -339,7 +347,7 @@ const VideoRecord = () => {
           </h1>
           <p className="text-slate-400">60 seconds. AI does the rest — skills, scores, job matches.</p>
           {speechSupported && (
-            <p className="text-xs text-emerald-400/60 mt-1">🎙️ Live speech capture enabled — saves 100x on AI costs</p>
+            <p className="text-xs text-emerald-400/60 mt-1">🎙️ Live speech capture enabled — ultra-fast analysis</p>
           )}
         </motion.div>
 

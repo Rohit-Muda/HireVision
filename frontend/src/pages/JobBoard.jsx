@@ -9,7 +9,10 @@ import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 
 const JOB_TYPES = ['All', 'full-time', 'part-time', 'contract', 'internship'];
-const LABELS = { 'full-time': 'Full-time', 'part-time': 'Part-time', 'contract': 'Contract', 'internship': 'Internship' };
+const EXP_LEVELS = ['All', 'entry', 'mid', 'senior', 'lead'];
+const TYPE_LABELS = { 'full-time': 'Full-time', 'part-time': 'Part-time', 'contract': 'Contract', 'internship': 'Internship' };
+const EXP_LABELS = { 'entry': 'Entry Level', 'mid': 'Mid Level', 'senior': 'Senior', 'lead': 'Lead' };
+const EXP_COLORS = { 'entry': 'bg-emerald-100 text-emerald-700', 'mid': 'bg-blue-100 text-blue-700', 'senior': 'bg-violet-100 text-violet-700', 'lead': 'bg-amber-100 text-amber-700' };
 
 const scoreColor = (s) => s >= 80 ? '#10b981' : s >= 60 ? '#f59e0b' : '#ef4444';
 
@@ -20,6 +23,7 @@ const JobBoard = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
+  const [expFilter, setExpFilter] = useState('All');
   const [appliedIds, setAppliedIds] = useState(new Set());
   const [selectedJob, setSelectedJob] = useState(null);
   const [applying, setApplying] = useState(null);
@@ -27,7 +31,7 @@ const JobBoard = () => {
   useEffect(() => {
     const timer = setTimeout(() => fetchJobs(), 300);
     return () => clearTimeout(timer);
-  }, [search, filter]);
+  }, [search, filter, expFilter]);
 
   useEffect(() => {
     // Pre-load applied jobs
@@ -46,6 +50,7 @@ const JobBoard = () => {
       const params = {};
       if (search) params.search = search;
       if (filter !== 'All') params.jobType = filter;
+      if (expFilter !== 'All') params.experienceLevel = expFilter;
       const res = await api.get('/jobs', { params });
       setJobs(res.data.jobs || []);
     } catch (err) {
@@ -89,29 +94,50 @@ const JobBoard = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search jobs, skills, companies..."
-            className="input-field pl-10"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col gap-3 mb-8">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search jobs, skills, companies..."
+              className="input-field pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        {/* Job type row */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Type:</span>
           {JOB_TYPES.map((t) => (
             <button
               key={t}
               onClick={() => setFilter(t)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 filter === t
                   ? 'bg-brand-600 text-white shadow-md'
                   : 'bg-white border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600'
               }`}
             >
-              {LABELS[t] || t}
+              {TYPE_LABELS[t] || t}
+            </button>
+          ))}
+        </div>
+        {/* Experience level row */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Level:</span>
+          {EXP_LEVELS.map((l) => (
+            <button
+              key={l}
+              onClick={() => setExpFilter(l)}
+              className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                expFilter === l
+                  ? 'bg-violet-600 text-white shadow-md'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-violet-300 hover:text-violet-600'
+              }`}
+            >
+              {EXP_LABELS[l] || l}
             </button>
           ))}
         </div>
@@ -164,7 +190,7 @@ const JobBoard = () => {
                     <MapPin className="w-3.5 h-3.5" />{job.location}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 font-medium">
-                    {LABELS[job.jobType] || job.jobType}
+                    {TYPE_LABELS[job.jobType] || job.jobType}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
                     {job.experienceLevel}
@@ -220,7 +246,7 @@ const JobBoard = () => {
                 <p className="text-lg font-bold text-slate-900">{selectedJob.company}</p>
                 <div className="flex items-center gap-3 text-sm text-slate-500">
                   <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{selectedJob.location}</span>
-                  <span>{LABELS[selectedJob.jobType]}</span>
+                  <span>{TYPE_LABELS[selectedJob.jobType] || selectedJob.jobType}</span>
                   <span className="capitalize">{selectedJob.experienceLevel}</span>
                 </div>
               </div>

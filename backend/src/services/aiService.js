@@ -5,12 +5,14 @@ const os = require('os');
 const path = require('path');
 
 // ─── Model fallback chain ────────────────────────────────────────────────────
-// Each model has SEPARATE per-model quotas on the free tier.
-// NOTE: gemini-1.5-* models are deprecated — do NOT use them.
+// Ordered by availability on current API key.
+// gemini-2.5-flash: ✅ CONFIRMED WORKING on this key
+// gemini-2.5-flash-lite: Lightweight backup (lower quota consumption)
+// gemini-2.0-flash: Fallback (may be quota-limited on free tier projects)
 const TEXT_MODELS = [
-  'gemini-2.0-flash',
   'gemini-2.5-flash',
-  'gemini-2.0-flash-lite',
+  'gemini-2.5-flash-lite-preview-06-17',
+  'gemini-2.0-flash',
 ];
 
 // ─── System prompts ──────────────────────────────────────────────────────────

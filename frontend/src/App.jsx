@@ -16,6 +16,7 @@ import PostJob from './pages/PostJob';
 import JobCandidates from './pages/JobCandidates';
 import KanbanPipeline from './pages/KanbanPipeline';
 import MyApplications from './pages/MyApplications';
+import CandidateSearch from './pages/CandidateSearch';
 
 // Route guards
 const RequireAuth = ({ role }) => {
@@ -67,9 +68,23 @@ const router = createBrowserRouter([
         children: [
           { path: 'recruiter', element: <RecruiterDashboard /> },
           { path: 'recruiter/post-job', element: <PostJob /> },
+          { path: 'recruiter/search', element: <CandidateSearch /> },
           { path: 'recruiter/jobs/:id', element: <JobCandidates /> },
           { path: 'recruiter/jobs/:id/pipeline', element: <KanbanPipeline /> },
         ],
+      },
+
+      // 404
+      {
+        path: '*',
+        element: (
+          <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+            <div className="text-8xl font-black text-slate-100 mb-4">404</div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Page not found</h1>
+            <p className="text-slate-500 mb-6">The page you're looking for doesn't exist.</p>
+            <a href="/" className="btn-primary">Go Home</a>
+          </div>
+        ),
       },
     ],
   },

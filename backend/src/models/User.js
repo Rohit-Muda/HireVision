@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
     education: { type: String, default: null },
     headline: { type: String, default: null },
     confidenceIndicators: { type: String, default: null },
+    resumeUrl: { type: String, default: null },
 
     // Recruiter fields
     companyName: { type: String, default: null },

@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Video, Zap, Briefcase, ChevronRight, BarChart3, Play, X, FileVideo } from 'lucide-react';
+import {
+  Video, Zap, Briefcase, ChevronRight, BarChart3, Play, FileText,
+  Upload, Download, CheckCircle, Clock, MapPin, GraduationCap,
+  Star, X
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import Modal from '../components/ui/Modal';
@@ -31,14 +35,9 @@ const ScoreGauge = ({ score, max = 10 }) => {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-3xl font-extrabold"
-            style={{ color: strokeColor }}
-          >
-            {score}
-          </motion.span>
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            className="text-3xl font-extrabold" style={{ color: strokeColor }}
+          >{score}</motion.span>
           <span className="text-xs text-slate-500">/10</span>
         </div>
       </div>
@@ -47,17 +46,59 @@ const ScoreGauge = ({ score, max = 10 }) => {
   );
 };
 
+// ─── Profile completeness bar ─────────────────────────────────────────────────
+const ProfileCompleteness = ({ hasVideo, hasResume, hasSkills }) => {
+  const steps = [
+    { done: hasVideo, label: 'Video Resume', icon: Video },
+    { done: hasSkills, label: 'Skills Detected', icon: Zap },
+    { done: hasResume, label: 'PDF Resume', icon: FileText },
+  ];
+  const count = steps.filter(s => s.done).length;
+  const pct = Math.round((count / steps.length) * 100);
+
+  return (
+    <div className="card mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-slate-900 text-sm">Profile Completeness</h3>
+        <span className={`text-sm font-bold ${pct === 100 ? 'text-emerald-600' : 'text-brand-600'}`}>{pct}%</span>
+      </div>
+      <div className="w-full h-2 bg-slate-100 rounded-full mb-4 overflow-hidden">
+        <motion.div
+          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-brand-500 to-violet-500'}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+        />
+      </div>
+      <div className="flex gap-4">
+        {steps.map(({ done, label, icon: Icon }) => (
+          <div key={label} className="flex items-center gap-1.5 text-xs">
+            {done
+              ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+              : <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />
+            }
+            <span className={done ? 'text-slate-700 font-medium' : 'text-slate-400'}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const stagger = { animate: { transition: { staggerChildren: 0.08 } } };
 const fadeUp = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } };
 
 const CandidateDashboard = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [applications, setApplications] = useState([]);
   const [loadingApps, setLoadingApps] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const resumeInputRef = useRef(null);
 
-  // ✅ Fix: only check videoAnalyzedAt — communicationScore can legitimately be 0
   const hasVideo = !!user?.videoAnalyzedAt;
+  const hasResume = !!user?.resumeUrl;
+  const hasSkills = (user?.skills?.length || 0) > 0;
 
   useEffect(() => {
     if (user?._id) {
@@ -69,11 +110,42 @@ const CandidateDashboard = () => {
     }
   }, [user?._id]);
 
+  // ── PDF Resume upload ──────────────────────────────────────────────────────
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file only');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File too large. Max 5MB.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    setUploadingResume(true);
+    try {
+      const res = await api.post('/candidates/upload-resume', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      updateUser(res.data.user);
+      toast.success('Resume uploaded successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Upload failed. Please try again.');
+    } finally {
+      setUploadingResume(false);
+      if (resumeInputRef.current) resumeInputRef.current.value = '';
+    }
+  };
+
   const stageConfig = {
     applied:   { label: 'Applied',   color: 'stage-applied' },
     screened:  { label: 'Screened',  color: 'stage-screened' },
     interview: { label: 'Interview', color: 'stage-interview' },
-    hired:     { label: 'Hired 🎉', color: 'stage-hired' },
+    hired:     { label: 'Hired 🎉',  color: 'stage-hired' },
     rejected:  { label: 'Rejected',  color: 'stage-rejected' },
   };
 
@@ -82,19 +154,33 @@ const CandidateDashboard = () => {
     : score >= 60 ? 'text-amber-600 bg-amber-50 border-amber-200'
     : 'text-red-600 bg-red-50 border-red-200';
 
+  // Categorize skills
+  const TECH_KEYWORDS = ['react','node','python','java','javascript','typescript','vue','angular','go','rust','swift','kotlin','php','ruby','rails','django','flask','spring','express','mongodb','postgresql','mysql','redis','docker','kubernetes','aws','gcp','azure','graphql','rest','next','nuxt','flutter','react native'];
+  const categorizeSkills = (skills) => {
+    const tech = skills.filter(s => TECH_KEYWORDS.some(k => s.toLowerCase().includes(k)));
+    const other = skills.filter(s => !TECH_KEYWORDS.some(k => s.toLowerCase().includes(k)));
+    return { tech, other };
+  };
+  const { tech: techSkills, other: softSkills } = categorizeSkills(user?.skills || []);
+
   return (
     <div className="page-container">
       {/* Welcome header */}
-      <motion.div {...fadeUp} className="mb-8">
+      <motion.div {...fadeUp} className="mb-6">
         <h1 className="text-3xl font-extrabold text-slate-900">
           Welcome back, <span className="text-gradient">{user?.name?.split(' ')[0]}</span> 👋
         </h1>
         <p className="text-slate-500 mt-1">
-          {hasVideo ? 'Your AI-powered profile is live.' : "Let's build your AI profile to get matched to jobs."}
+          {hasVideo ? 'Your AI-powered profile is live and getting matches.' : "Let's build your AI-powered profile to get matched to jobs."}
         </p>
       </motion.div>
 
-      {/* ── STATE 1: No video ─────────────────────────────────────────────── */}
+      {/* Profile Completeness */}
+      <motion.div {...fadeUp} transition={{ delay: 0.05 }}>
+        <ProfileCompleteness hasVideo={hasVideo} hasResume={hasResume} hasSkills={hasSkills} />
+      </motion.div>
+
+      {/* ── STATE 1: No video ────────────────────────────────────────────── */}
       {!hasVideo && (
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="card text-center py-16 mb-8">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-100 to-violet-100 flex items-center justify-center mx-auto mb-6">
@@ -102,7 +188,7 @@ const CandidateDashboard = () => {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-3">Build your AI-powered profile</h2>
           <p className="text-slate-500 mb-8 max-w-md mx-auto">
-            Record a 60-second video resume. Gemini AI will extract your skills, score your communication,
+            Record a 60-second video resume. AI will extract your skills, score your communication,
             and instantly match you to the best jobs.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -110,35 +196,30 @@ const CandidateDashboard = () => {
               <Video className="w-5 h-5" />
               Record Video Resume
             </Link>
-            {/* ✅ Fix: Upload button navigates to record page (full upload flow there) */}
             <Link to="/record" className="btn-secondary text-base px-6 py-3 gap-2">
-              <FileVideo className="w-4 h-4" />
+              <Upload className="w-4 h-4" />
               Upload Video Instead
             </Link>
           </div>
         </motion.div>
       )}
 
-      {/* ── STATE 2: Video analyzed ───────────────────────────────────────── */}
+      {/* ── STATE 2: Video analyzed ──────────────────────────────────────── */}
       {hasVideo && (
         <>
-          <motion.div variants={stagger} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-6 mb-10">
+          <motion.div variants={stagger} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-6 mb-6">
             {/* Video player */}
             <motion.div variants={fadeUp} className="card !p-0 overflow-hidden">
               <div className="bg-slate-900 aspect-video flex items-center justify-center relative">
                 {user?.videoUrl ? (
-                  <video
-                    src={user.videoUrl}
-                    controls
-                    className="w-full h-full object-cover"
-                  />
+                  <video src={user.videoUrl} controls className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-center text-white/60 px-6">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-600 to-violet-600 flex items-center justify-center mx-auto mb-3">
                       <Play className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-sm font-medium text-white/80">Video analyzed via Gemini AI</p>
-                    <p className="text-xs text-white/40 mt-1">Video file not stored (AI analysis saved)</p>
+                    <p className="text-sm font-medium text-white/80">Video Resume Analyzed</p>
+                    <p className="text-xs text-white/40 mt-1">AI analysis complete</p>
                     {user?.videoTranscript && (
                       <button
                         onClick={() => setTranscriptOpen(true)}
@@ -178,31 +259,18 @@ const CandidateDashboard = () => {
                 </div>
               </div>
 
-              {/* Skills */}
-              {user?.skills?.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-semibold text-slate-700 mb-2">Detected Skills</p>
-                  <motion.div variants={stagger} className="flex flex-wrap gap-2">
-                    {user.skills.map((s) => (
-                      <motion.span key={s} variants={fadeUp} className="skill-badge">{s}</motion.span>
-                    ))}
-                  </motion.div>
-                </div>
-              )}
-
               {/* AI Summary */}
               {user?.aiSummary && (
-                <div className="p-4 rounded-xl bg-gradient-to-r from-brand-50 to-violet-50 border border-brand-100">
+                <div className="p-4 rounded-xl bg-gradient-to-r from-brand-50 to-violet-50 border border-brand-100 mb-4">
                   <p className="text-sm font-semibold text-brand-700 mb-1">AI Summary</p>
                   <p className="text-slate-700 text-sm leading-relaxed italic">"{user.aiSummary}"</p>
                 </div>
               )}
 
-              {/* View transcript button */}
               {user?.videoTranscript && (
                 <button
                   onClick={() => setTranscriptOpen(true)}
-                  className="mt-4 w-full text-sm font-semibold text-brand-600 hover:text-brand-700 border border-brand-200 hover:border-brand-400 py-2.5 rounded-xl transition-all hover:bg-brand-50"
+                  className="w-full text-sm font-semibold text-brand-600 hover:text-brand-700 border border-brand-200 hover:border-brand-400 py-2.5 rounded-xl transition-all hover:bg-brand-50"
                 >
                   View Full Transcript
                 </button>
@@ -210,9 +278,45 @@ const CandidateDashboard = () => {
             </motion.div>
           </motion.div>
 
+          {/* ── SKILLS PORTFOLIO ─────────────────────────────────────────── */}
+          {(user?.skills?.length > 0) && (
+            <motion.div variants={fadeUp} className="card mb-6">
+              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <Star className="w-5 h-5 text-amber-500" />
+                Skills Portfolio
+              </h3>
+              <div className="space-y-4">
+                {techSkills.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Technical Skills</p>
+                    <motion.div variants={stagger} className="flex flex-wrap gap-2">
+                      {techSkills.map((s) => (
+                        <motion.span key={s} variants={fadeUp}
+                          className="px-3 py-1.5 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 text-sm font-semibold hover:bg-brand-100 transition-colors cursor-default"
+                        >{s}</motion.span>
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
+                {softSkills.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Other Skills</p>
+                    <motion.div variants={stagger} className="flex flex-wrap gap-2">
+                      {softSkills.map((s) => (
+                        <motion.span key={s} variants={fadeUp}
+                          className="px-3 py-1.5 rounded-lg bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold hover:bg-violet-100 transition-colors cursor-default"
+                        >{s}</motion.span>
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Experience Summary */}
           {user?.experienceSummary && (
-            <motion.div variants={fadeUp} className="card mb-8">
+            <motion.div variants={fadeUp} className="card mb-6">
               <h3 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-brand-500" />
                 Experience Summary
@@ -223,8 +327,67 @@ const CandidateDashboard = () => {
         </>
       )}
 
-      {/* ── APPLICATIONS ─────────────────────────────────────────────────── */}
-      <div className="mt-6">
+      {/* ── PDF RESUME UPLOAD ─────────────────────────────────────────────── */}
+      <motion.div {...fadeUp} className="card mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-900 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-brand-600" />
+            PDF Resume
+          </h3>
+          {hasResume && (
+            <a
+              href={user.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-brand-600 font-semibold hover:underline"
+            >
+              <Download className="w-4 h-4" /> Download
+            </a>
+          )}
+        </div>
+
+        {hasResume ? (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-emerald-800">Resume uploaded</p>
+              <p className="text-xs text-emerald-600 truncate">{user.resumeUrl?.split('/').pop()}</p>
+            </div>
+            <button
+              onClick={() => resumeInputRef.current?.click()}
+              className="text-xs text-slate-500 hover:text-slate-700 font-medium underline shrink-0"
+            >
+              Replace
+            </button>
+          </div>
+        ) : (
+          <div
+            onClick={() => resumeInputRef.current?.click()}
+            className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-all group"
+          >
+            <Upload className="w-8 h-8 text-slate-300 group-hover:text-brand-500 mx-auto mb-3 transition-colors" />
+            <p className="font-semibold text-slate-600 group-hover:text-brand-700">Click to upload PDF resume</p>
+            <p className="text-sm text-slate-400 mt-1">PDF only · Max 5MB</p>
+            {uploadingResume && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-brand-600 text-sm">
+                <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                Uploading…
+              </div>
+            )}
+          </div>
+        )}
+        <input
+          ref={resumeInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={handleResumeUpload}
+          disabled={uploadingResume}
+        />
+      </motion.div>
+
+      {/* ── APPLICATIONS ────────────────────────────────────────────────── */}
+      <div className="mt-2">
         <div className="flex items-center justify-between mb-5">
           <h2 className="section-heading mb-0">My Applications</h2>
           <Link to="/jobs" className="btn-primary text-sm py-2 px-4">
@@ -256,6 +419,9 @@ const CandidateDashboard = () => {
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-slate-900 truncate">{app.jobId?.title}</h4>
                   <p className="text-sm text-slate-500">{app.jobId?.company} · {app.jobId?.location}</p>
+                  {app.matchExplanation && (
+                    <p className="text-xs text-slate-400 mt-1 italic truncate">{app.matchExplanation}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   {app.matchScore > 0 && (
@@ -281,7 +447,7 @@ const CandidateDashboard = () => {
               {user?.videoTranscript || 'No transcript available.'}
             </p>
           </div>
-          <p className="text-xs text-slate-400 mt-3">Transcribed by Gemini 2.5 Flash AI</p>
+          <p className="text-xs text-slate-400 mt-3">Transcribed by AI analysis</p>
         </div>
       </Modal>
     </div>

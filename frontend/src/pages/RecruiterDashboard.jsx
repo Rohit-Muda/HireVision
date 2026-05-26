@@ -2,14 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Briefcase, Users, TrendingUp, BarChart3, PlusCircle, ChevronRight, ArrowRight } from 'lucide-react';
+import { Briefcase, Users, TrendingUp, BarChart3, PlusCircle, ChevronRight, ArrowRight, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-
-const countUp = (target, duration = 1500) => {
-  // Handled via framer-motion in render
-  return target;
-};
 
 const StatCard = ({ label, value, icon: Icon, color, suffix = '' }) => (
   <motion.div
@@ -140,6 +135,19 @@ const RecruiterDashboard = () => {
           </motion.div>
         )}
       </div>
+      {/* Find Talent CTA */}
+      <motion.div {...fadeUp} className="mt-6 card bg-gradient-to-r from-brand-50 to-violet-50 border-brand-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-slate-900">Looking for specific talent?</h3>
+            <p className="text-sm text-slate-500 mt-0.5">Search all candidates by skills and location</p>
+          </div>
+          <Link to="/recruiter/search" className="btn-primary gap-2 shrink-0">
+            <Search className="w-4 h-4" />
+            Find Talent
+          </Link>
+        </div>
+      </motion.div>
     </div>
   );
 };

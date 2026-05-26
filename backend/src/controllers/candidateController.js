@@ -12,7 +12,9 @@ const analyzeVideoResume = async (req, res, next) => {
 
     const uid = req.user.firebaseUid;
     const timestamp = Date.now();
-    const mimeType = req.file.mimetype || 'video/webm';
+    // Normalize MIME: strip codec params (e.g. 'video/webm;codecs=vp9,opus' → 'video/webm')
+    const rawMime = req.file.mimetype || 'video/webm';
+    const mimeType = rawMime.split(';')[0].trim() || 'video/webm';
 
     // Determine file extension from MIME type
     const extMap = {
@@ -21,6 +23,8 @@ const analyzeVideoResume = async (req, res, next) => {
       'video/quicktime': 'mov',
       'video/x-msvideo': 'avi',
       'video/ogg': 'ogv',
+      'video/3gpp': '3gp',
+      'application/octet-stream': 'webm', // browser fallback
     };
     const ext = extMap[mimeType] || 'webm';
     const destination = `videos/${uid}/${timestamp}.${ext}`;
@@ -150,4 +154,40 @@ const searchCandidates = async (req, res, next) => {
   }
 };
 
-module.exports = { analyzeVideoResume, getCandidateProfile, searchCandidates };
+// POST /api/candidates/upload-resume
+const uploadResume = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No PDF file provided' });
+    }
+
+    const uid = req.user.firebaseUid;
+    const timestamp = Date.now();
+    const destination = `resumes/${uid}/${timestamp}.pdf`;
+
+    let publicUrl = null;
+    try {
+      publicUrl = await uploadToStorage(req.file.buffer, destination, 'application/pdf');
+      console.log('✅ Resume PDF uploaded:', publicUrl);
+    } catch (err) {
+      console.error('Firebase Storage upload failed:', err.message);
+      return res.status(500).json({ error: 'Failed to upload resume. Please try again.' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { resumeUrl: publicUrl },
+      { new: true }
+    );
+
+    res.json({
+      message: 'Resume uploaded successfully',
+      resumeUrl: publicUrl,
+      user: updatedUser.toPublicJSON(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { analyzeVideoResume, getCandidateProfile, searchCandidates, uploadResume };

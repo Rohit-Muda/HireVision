@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import {
   Video, Briefcase, LogOut, Menu, X, ChevronDown,
-  User, LayoutDashboard, PlusCircle, List
+  User, LayoutDashboard, PlusCircle, List, Search
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -32,6 +32,7 @@ const Navbar = () => {
   const recruiterLinks = [
     { to: '/recruiter', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/recruiter/post-job', label: 'Post Job', icon: PlusCircle },
+    { to: '/recruiter/search', label: 'Find Talent', icon: Search },
   ];
 
   const navLinks = isCandidate ? candidateLinks : isRecruiter ? recruiterLinks : [];
