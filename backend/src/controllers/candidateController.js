@@ -32,10 +32,16 @@ const analyzeVideoResume = async (req, res, next) => {
     try {
       console.log(`🤖 Starting Gemini video analysis (${(req.file.buffer.length / 1024 / 1024).toFixed(2)} MB)...`);
       analysis = await analyzeVideo(req.file.buffer, mimeType);
-      console.log('✅ Gemini analysis complete');
+      console.log(`✅ Gemini analysis complete (model: ${analysis.modelUsed || 'unknown'})`);
     } catch (err) {
       console.error('Gemini analysis failed:', err.message);
-      return res.status(500).json({ error: `AI analysis failed: ${err.message}` });
+      // Distinguish quota errors from real failures
+      const isQuota = err.message.includes('quota') || err.message.includes('exhausted');
+      const status = isQuota ? 429 : 500;
+      const userMsg = isQuota
+        ? 'AI quota temporarily exceeded. Your free-tier resets at midnight PT. Please try again in a few minutes, or use a different API key.'
+        : `AI analysis failed: ${err.message}`;
+      return res.status(status).json({ error: userMsg, retryable: isQuota });
     }
 
     // Step 2: Upload to Firebase Storage (for archiving / playback)

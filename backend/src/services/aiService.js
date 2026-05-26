@@ -4,6 +4,21 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// ─── Model fallback chain ────────────────────────────────────────────────────
+// If one model's quota is hit (429), we try the next.
+// Each model has SEPARATE per-model quotas on the free tier.
+const VIDEO_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-2.0-flash-lite',
+];
+
+const TEXT_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-2.0-flash-lite',
+];
+
 const SYSTEM_INSTRUCTION = `You are an expert HR analyst and career coach. You analyze video resumes with deep attention to both content and delivery. You are fair, unbiased, and provide constructive assessments. Always respond with valid JSON only, no markdown formatting, no code blocks.`;
 
 const VIDEO_ANALYSIS_PROMPT = `Analyze this candidate's video resume carefully. Watch their delivery, listen to their content, and evaluate both what they say and how they say it.
@@ -27,7 +42,25 @@ Scoring guide for communicationScore:
 
 If the video has no speech, return empty transcript and score of 0.`;
 
-// Singleton FileManager to avoid re-creating on every request
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Sleep for ms milliseconds */
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Parse a retry delay from a Gemini 429 error message */
+const parseRetryDelay = (errorMessage) => {
+  const match = errorMessage?.match(/retry\s*in\s*(\d+(?:\.\d+)?)\s*s/i);
+  return match ? Math.ceil(parseFloat(match[1]) * 1000) + 2000 : 25000; // default 25s
+};
+
+/** Check if error is a retryable 429 quota error */
+const isQuotaError = (err) => {
+  const msg = err?.message || '';
+  return msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')
+    || msg.includes('RESOURCE_EXHAUSTED');
+};
+
+// Singleton FileManager
 let _fileManager = null;
 const getFileManager = () => {
   if (!_fileManager) {
@@ -36,10 +69,10 @@ const getFileManager = () => {
   return _fileManager;
 };
 
+// ─── File Upload ──────────────────────────────────────────────────────────────
+
 /**
  * Upload a video buffer to the Gemini File API.
- * Gemini's fileData part ONLY accepts generativelanguage.googleapis.com URIs.
- * Firebase Storage URLs are NOT supported by Gemini multimodal input.
  * @param {Buffer} videoBuffer
  * @param {string} mimeType
  * @returns {Promise<string>} Gemini file URI
@@ -68,10 +101,10 @@ const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
     let file = uploadResult.file;
     console.log(`📂 Gemini file state: ${file.state}, waiting for ACTIVE...`);
 
-    // Poll until ACTIVE (Gemini processes asynchronously)
+    // Poll until ACTIVE
     let attempts = 0;
     while (file.state === FileState.PROCESSING && attempts < 30) {
-      await new Promise((r) => setTimeout(r, 3000));
+      await sleep(3000);
       file = await fileManager.getFile(file.name);
       attempts++;
       console.log(`   ⏳ Attempt ${attempts}: ${file.state}`);
@@ -88,76 +121,102 @@ const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
   }
 };
 
+// ─── Video Analysis (with retry + model fallback) ─────────────────────────────
+
 /**
- * Analyze a video resume using Gemini 2.5 Flash.
- * @param {Buffer} videoBuffer - raw video bytes (from multer memoryStorage)
- * @param {string} mimeType - video MIME type
+ * Analyze a video resume. Tries each model in VIDEO_MODELS until one succeeds.
+ * On 429 errors, waits the specified retry delay before trying the next model.
+ * @param {Buffer} videoBuffer
+ * @param {string} mimeType
  * @returns {Promise<Object>} analysis object
  */
 const analyzeVideo = async (videoBuffer, mimeType = 'video/webm') => {
   const genAI = getGenAI();
 
-  // Upload buffer to Gemini File API to get a valid fileUri
+  // Step 1: Upload to Gemini File API (shared across all models)
   const fileUri = await uploadBufferToGeminiFileApi(videoBuffer, mimeType);
 
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    systemInstruction: SYSTEM_INSTRUCTION,
-  });
+  // Step 2: Try each model in order
+  const errors = [];
+  for (const modelName of VIDEO_MODELS) {
+    try {
+      console.log(`🤖 Trying model: ${modelName}...`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: SYSTEM_INSTRUCTION,
+      });
 
-  const result = await model.generateContent({
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { fileData: { mimeType, fileUri } },
-          { text: VIDEO_ANALYSIS_PROMPT },
+      const result = await model.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { fileData: { mimeType, fileUri } },
+              { text: VIDEO_ANALYSIS_PROMPT },
+            ],
+          },
         ],
-      },
-    ],
-    generationConfig: {
-      responseMimeType: 'application/json',
-    },
-  });
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      });
 
-  const text = result.response.text();
+      const text = result.response.text();
+      console.log(`✅ ${modelName} responded successfully`);
 
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch (err) {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    } else {
-      throw new Error(`Failed to parse Gemini response as JSON. Raw: ${text.substring(0, 200)}`);
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (parseErr) {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error(`Failed to parse ${modelName} response as JSON. Raw: ${text.substring(0, 200)}`);
+        }
+      }
+
+      return {
+        transcript: parsed.transcript || '',
+        skills: Array.isArray(parsed.skills) ? parsed.skills : [],
+        experienceSummary: parsed.experienceSummary || '',
+        communicationScore:
+          typeof parsed.communicationScore === 'number'
+            ? Math.min(10, Math.max(0, Math.round(parsed.communicationScore)))
+            : 0,
+        confidenceIndicators: parsed.confidenceIndicators || '',
+        aiSummary: parsed.aiSummary || '',
+        modelUsed: modelName,
+        error: parsed.error || null,
+      };
+    } catch (err) {
+      errors.push({ model: modelName, error: err.message });
+      console.warn(`⚠️  ${modelName} failed: ${err.message.substring(0, 120)}`);
+
+      if (isQuotaError(err)) {
+        const delay = parseRetryDelay(err.message);
+        console.log(`   ⏳ Quota hit on ${modelName}. Waiting ${(delay / 1000).toFixed(0)}s before trying next model...`);
+        await sleep(delay);
+      }
+      // Continue to next model
     }
   }
 
-  return {
-    transcript: parsed.transcript || '',
-    skills: Array.isArray(parsed.skills) ? parsed.skills : [],
-    experienceSummary: parsed.experienceSummary || '',
-    communicationScore:
-      typeof parsed.communicationScore === 'number'
-        ? Math.min(10, Math.max(0, Math.round(parsed.communicationScore)))
-        : 0,
-    confidenceIndicators: parsed.confidenceIndicators || '',
-    aiSummary: parsed.aiSummary || '',
-    error: parsed.error || null,
-  };
+  // All models failed — throw with details
+  const errorSummary = errors.map(e => `${e.model}: ${e.error.substring(0, 80)}`).join(' | ');
+  throw new Error(
+    `All Gemini models exhausted. This usually means your API key's daily free-tier quota is used up. ` +
+    `It resets at midnight Pacific Time. Details: ${errorSummary}`
+  );
 };
 
+// ─── Match Explanation (with retry + model fallback) ──────────────────────────
+
 /**
- * Generate a match explanation using Gemini
+ * Generate a match explanation using Gemini (text-only, lightweight).
  */
 const generateMatchExplanation = async (candidateSkills, jobSkills, score) => {
   const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    systemInstruction:
-      'You are a hiring recommendation engine. Be concise, specific, and honest. One sentence only.',
-  });
 
   const prompt = `Generate a one-sentence hiring recommendation.
 Candidate skills: ${candidateSkills.join(', ')}
@@ -165,8 +224,32 @@ Job requires: ${jobSkills.join(', ')}
 Match percentage: ${score}%
 Be specific about strengths and gaps. Do not be generic.`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim().replace(/^"|"$/g, '');
+  for (const modelName of TEXT_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction:
+          'You are a hiring recommendation engine. Be concise, specific, and honest. One sentence only.',
+      });
+
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim().replace(/^"|"$/g, '');
+    } catch (err) {
+      if (isQuotaError(err)) {
+        console.warn(`⚠️  ${modelName} quota hit for match explanation, trying next...`);
+        await sleep(5000);
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  // Fallback: rule-based explanation (no AI needed)
+  const matched = candidateSkills.filter(s => jobSkills.some(j => j.toLowerCase() === s.toLowerCase()));
+  const missing = jobSkills.filter(j => !candidateSkills.some(s => s.toLowerCase() === j.toLowerCase()));
+  return matched.length > 0
+    ? `Strong in ${matched.join(', ')}${missing.length ? '. Gaps: ' + missing.join(', ') : '. Full coverage.'}`
+    : `Limited overlap. Missing: ${missing.join(', ')}.`;
 };
 
 module.exports = { analyzeVideo, generateMatchExplanation };
