@@ -101,7 +101,7 @@ const analyzeVideo = async (videoBuffer, mimeType = 'video/webm') => {
   const fileUri = await uploadBufferToGeminiFileApi(videoBuffer, mimeType);
 
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash-preview-05-20',
+    model: 'gemini-2.0-flash',
     systemInstruction: SYSTEM_INSTRUCTION,
   });
 
@@ -154,7 +154,7 @@ const analyzeVideo = async (videoBuffer, mimeType = 'video/webm') => {
 const generateMatchExplanation = async (candidateSkills, jobSkills, score) => {
   const genAI = getGenAI();
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash-preview-05-20',
+    model: 'gemini-2.0-flash',
     systemInstruction:
       'You are a hiring recommendation engine. Be concise, specific, and honest. One sentence only.',
   });

@@ -11,7 +11,10 @@ const videoAnalysisLimiter = rateLimit({
   message: { error: 'Video analysis limit reached. You can analyze 10 videos per hour.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.firebaseUid || req.ip,
+  // ✅ Use firebaseUid as the key (auth is verified before this runs).
+  // We skip req.ip entirely to avoid the express-rate-limit IPv6 validation error.
+  keyGenerator: (req) => req.user?.firebaseUid ?? 'anon',
+  skip: (req) => !req.user?.firebaseUid, // skip if auth failed (will 401 anyway)
 });
 
 router.get('/search', searchCandidates);
