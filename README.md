@@ -280,8 +280,3 @@ Use the 1-click demo buttons on the login page — no signup needed.
 - Move them through the pipeline
 - Use Find Talent to search all candidates by skill
 
----
-
-## License
-
-MIT
