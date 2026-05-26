@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Video, Zap, Briefcase, ChevronRight, CheckCircle, AlertCircle, BarChart3 } from 'lucide-react';
+import { Video, Zap, Briefcase, ChevronRight, BarChart3, Play, X, FileVideo } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import Modal from '../components/ui/Modal';
-import Button from '../components/ui/Button';
 
-// Circular SVG score gauge
+// ─── Circular SVG score gauge ─────────────────────────────────────────────────
 const ScoreGauge = ({ score, max = 10 }) => {
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
@@ -48,21 +47,17 @@ const ScoreGauge = ({ score, max = 10 }) => {
   );
 };
 
-const stagger = {
-  animate: { transition: { staggerChildren: 0.08 } }
-};
-const fadeUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 }
-};
+const stagger = { animate: { transition: { staggerChildren: 0.08 } } };
+const fadeUp = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } };
 
 const CandidateDashboard = () => {
   const { user } = useAuth();
   const [applications, setApplications] = useState([]);
   const [loadingApps, setLoadingApps] = useState(false);
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
 
-  const hasVideo = user?.videoAnalyzedAt && user?.communicationScore !== null;
+  // ✅ Fix: only check videoAnalyzedAt — communicationScore can legitimately be 0
+  const hasVideo = !!user?.videoAnalyzedAt;
 
   useEffect(() => {
     if (user?._id) {
@@ -75,11 +70,11 @@ const CandidateDashboard = () => {
   }, [user?._id]);
 
   const stageConfig = {
-    applied: { label: 'Applied', color: 'stage-applied' },
-    screened: { label: 'Screened', color: 'stage-screened' },
+    applied:   { label: 'Applied',   color: 'stage-applied' },
+    screened:  { label: 'Screened',  color: 'stage-screened' },
     interview: { label: 'Interview', color: 'stage-interview' },
-    hired: { label: 'Hired 🎉', color: 'stage-hired' },
-    rejected: { label: 'Rejected', color: 'stage-rejected' },
+    hired:     { label: 'Hired 🎉', color: 'stage-hired' },
+    rejected:  { label: 'Rejected',  color: 'stage-rejected' },
   };
 
   const scoreColor = (score) =>
@@ -95,11 +90,11 @@ const CandidateDashboard = () => {
           Welcome back, <span className="text-gradient">{user?.name?.split(' ')[0]}</span> 👋
         </h1>
         <p className="text-slate-500 mt-1">
-          {hasVideo ? 'Your AI-powered profile is live.' : 'Let\'s build your AI profile to get matched to jobs.'}
+          {hasVideo ? 'Your AI-powered profile is live.' : "Let's build your AI profile to get matched to jobs."}
         </p>
       </motion.div>
 
-      {/* STATE 1: No video */}
+      {/* ── STATE 1: No video ─────────────────────────────────────────────── */}
       {!hasVideo && (
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="card text-center py-16 mb-8">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-100 to-violet-100 flex items-center justify-center mx-auto mb-6">
@@ -115,16 +110,16 @@ const CandidateDashboard = () => {
               <Video className="w-5 h-5" />
               Record Video Resume
             </Link>
-            <label className="btn-secondary text-base px-6 py-3 cursor-pointer gap-2">
-              <Zap className="w-4 h-4" />
+            {/* ✅ Fix: Upload button navigates to record page (full upload flow there) */}
+            <Link to="/record" className="btn-secondary text-base px-6 py-3 gap-2">
+              <FileVideo className="w-4 h-4" />
               Upload Video Instead
-              <input type="file" accept="video/*" className="hidden" />
-            </label>
+            </Link>
           </div>
         </motion.div>
       )}
 
-      {/* STATE 2: Video analyzed */}
+      {/* ── STATE 2: Video analyzed ───────────────────────────────────────── */}
       {hasVideo && (
         <>
           <motion.div variants={stagger} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-6 mb-10">
@@ -136,25 +131,29 @@ const CandidateDashboard = () => {
                     src={user.videoUrl}
                     controls
                     className="w-full h-full object-cover"
-                    poster=""
                   />
                 ) : (
-                  <div className="text-center text-white/60">
-                    <Video className="w-12 h-12 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">Video recorded via AI analysis</p>
-                    <button
-                      onClick={() => setVideoModalOpen(true)}
-                      className="mt-3 px-4 py-2 rounded-lg bg-white/10 text-white text-sm hover:bg-white/20 transition"
-                    >
-                      View AI Summary
-                    </button>
+                  <div className="text-center text-white/60 px-6">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-600 to-violet-600 flex items-center justify-center mx-auto mb-3">
+                      <Play className="w-8 h-8 text-white" />
+                    </div>
+                    <p className="text-sm font-medium text-white/80">Video analyzed via Gemini AI</p>
+                    <p className="text-xs text-white/40 mt-1">Video file not stored (AI analysis saved)</p>
+                    {user?.videoTranscript && (
+                      <button
+                        onClick={() => setTranscriptOpen(true)}
+                        className="mt-3 px-4 py-2 rounded-lg bg-white/10 text-white text-sm hover:bg-white/20 transition font-medium"
+                      >
+                        Read Transcript
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
               <div className="p-4 flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-slate-900">{user?.headline || 'Video Resume'}</p>
-                  <p className="text-sm text-slate-500">{user?.location || ''}</p>
+                  <p className="text-sm text-slate-500">{user?.location || 'Ready for matching'}</p>
                 </div>
                 <Link to="/record" className="text-sm text-brand-600 font-semibold hover:underline flex items-center gap-1">
                   Re-record <ChevronRight className="w-4 h-4" />
@@ -170,7 +169,7 @@ const CandidateDashboard = () => {
               </h3>
 
               <div className="flex items-start gap-6 mb-5">
-                <ScoreGauge score={user?.communicationScore || 0} />
+                <ScoreGauge score={user?.communicationScore ?? 0} />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-slate-500 mb-1">Communication Score</p>
                   {user?.confidenceIndicators && (
@@ -198,6 +197,16 @@ const CandidateDashboard = () => {
                   <p className="text-slate-700 text-sm leading-relaxed italic">"{user.aiSummary}"</p>
                 </div>
               )}
+
+              {/* View transcript button */}
+              {user?.videoTranscript && (
+                <button
+                  onClick={() => setTranscriptOpen(true)}
+                  className="mt-4 w-full text-sm font-semibold text-brand-600 hover:text-brand-700 border border-brand-200 hover:border-brand-400 py-2.5 rounded-xl transition-all hover:bg-brand-50"
+                >
+                  View Full Transcript
+                </button>
+              )}
             </motion.div>
           </motion.div>
 
@@ -214,7 +223,7 @@ const CandidateDashboard = () => {
         </>
       )}
 
-      {/* Applications */}
+      {/* ── APPLICATIONS ─────────────────────────────────────────────────── */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="section-heading mb-0">My Applications</h2>
@@ -263,6 +272,18 @@ const CandidateDashboard = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Transcript Modal */}
+      <Modal isOpen={transcriptOpen} onClose={() => setTranscriptOpen(false)} title="Video Transcript">
+        <div className="p-6">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 max-h-96 overflow-y-auto">
+            <p className="text-slate-700 leading-relaxed text-sm whitespace-pre-wrap">
+              {user?.videoTranscript || 'No transcript available.'}
+            </p>
+          </div>
+          <p className="text-xs text-slate-400 mt-3">Transcribed by Gemini 2.5 Flash AI</p>
+        </div>
+      </Modal>
     </div>
   );
 };

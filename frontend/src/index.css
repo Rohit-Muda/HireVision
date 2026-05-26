@@ -159,3 +159,17 @@
 .page-enter-active { opacity: 1; transform: translateY(0); transition: all 400ms ease; }
 .page-exit { opacity: 1; }
 .page-exit-active { opacity: 0; transform: translateY(-20px); transition: all 300ms ease; }
+
+/* Floating animation for icons */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Tabular numbers for timer displays */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

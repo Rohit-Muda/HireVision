@@ -16,14 +16,17 @@ const generateEmbedding = async (text) => {
  * Build embedding input text for a candidate
  */
 const buildCandidateEmbeddingText = (skills, aiSummary) => {
-  return `${skills.join(', ')}. ${aiSummary}`;
+  const skillText = Array.isArray(skills) ? skills.join(', ') : '';
+  const summary = aiSummary || '';
+  return `${skillText}. ${summary}`.trim();
 };
 
 /**
  * Build embedding input text for a job
  */
 const buildJobEmbeddingText = (title, description, skillsRequired) => {
-  return `${title}. ${description}. Required skills: ${skillsRequired.join(', ')}`;
+  const skills = Array.isArray(skillsRequired) ? skillsRequired.join(', ') : '';
+  return `${title || ''}. ${description || ''}. Required skills: ${skills}`.trim();
 };
 
 module.exports = { generateEmbedding, buildCandidateEmbeddingText, buildJobEmbeddingText };

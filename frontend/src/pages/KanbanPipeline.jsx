@@ -78,32 +78,40 @@ const KanbanPipeline = () => {
   };
 
   const onDragEnd = async (result) => {
-    const { source, destination, draggableId } = result;
-    if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) return;
+    const { source, destination } = result;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const srcCol = [...(columns[source.droppableId] || [])];
-    const dstCol = [...(columns[destination.droppableId] || [])];
     const [moved] = srcCol.splice(source.index, 1);
-
     if (!moved) return;
 
-    // Optimistic update
-    const newColumns = {
-      ...columns,
-      [source.droppableId]: srcCol,
-      [destination.droppableId]: source.droppableId === destination.droppableId
-        ? srcCol
-        : [...dstCol.slice(0, destination.index), { ...moved, stage: destination.droppableId }, ...dstCol.slice(destination.index)],
-    };
+    let newColumns;
+    if (source.droppableId === destination.droppableId) {
+      // ✅ Same-column reorder — rebuild from the already-spliced srcCol
+      srcCol.splice(destination.index, 0, moved);
+      newColumns = { ...columns, [source.droppableId]: srcCol };
+    } else {
+      // Cross-column move
+      const dstCol = [...(columns[destination.droppableId] || [])];
+      dstCol.splice(destination.index, 0, { ...moved, stage: destination.droppableId });
+      newColumns = {
+        ...columns,
+        [source.droppableId]: srcCol,
+        [destination.droppableId]: dstCol,
+      };
+    }
     setColumns(newColumns);
 
-    try {
-      await api.patch(`/applications/${moved._id}/stage`, { stage: destination.droppableId });
-      toast.success(`Moved to ${destination.droppableId}`);
-    } catch (err) {
-      toast.error('Failed to update stage');
-      // Revert
-      fetchData();
+    // Only persist to backend on column change (stage change)
+    if (source.droppableId !== destination.droppableId) {
+      try {
+        await api.patch(`/applications/${moved._id}/stage`, { stage: destination.droppableId });
+        toast.success(`Moved to ${destination.droppableId}`);
+      } catch (err) {
+        toast.error('Failed to update stage');
+        fetchData(); // revert on error
+      }
     }
   };
 

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 
 const connectDB = require('./config/db');
 const { initializeFirebase } = require('./config/firebase');
@@ -27,8 +28,35 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '250mb' }));
 app.use(express.urlencoded({ extended: true, limit: '250mb' }));
 
+// ─── Rate Limiters ───────────────────────────────────────────────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: { error: 'Too many login attempts. Please wait 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const videoAnalysisLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { error: 'Video analysis limit reached. You can analyze 10 videos per hour.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { error: 'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/api/health', // never throttle health checks
+});
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
-app.use('/api/auth', require('./routes/auth'));
+app.use(apiLimiter);
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/candidates', require('./routes/candidates'));
 app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/applications', require('./routes/applications'));

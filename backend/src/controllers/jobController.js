@@ -107,38 +107,38 @@ const getJobCandidates = async (req, res, next) => {
     // Compute matches
     const matches = await matchCandidatesToJob(job, candidates);
 
-    // Auto-create Application records for unmatched candidates
-    for (const match of matches) {
-      try {
-        await Application.findOneAndUpdate(
-          { candidateId: match.candidate._id, jobId: job._id },
-          {
-            $setOnInsert: {
-              candidateId: match.candidate._id,
-              jobId: job._id,
-              matchScore: match.matchScore,
-              matchExplanation: match.matchExplanation,
-              matchedSkills: match.matchedSkills,
-              missingSkills: match.missingSkills,
-              stage: 'applied',
-              appliedAt: new Date(),
+    // Upsert Application records in parallel and capture applicationId per match
+    const matchesWithAppId = await Promise.all(
+      matches.map(async (match) => {
+        try {
+          const app = await Application.findOneAndUpdate(
+            { candidateId: match.candidate._id, jobId: job._id },
+            {
+              $setOnInsert: {
+                candidateId: match.candidate._id,
+                jobId: job._id,
+                stage: 'applied',
+                appliedAt: new Date(),
+              },
+              $set: {
+                matchScore: match.matchScore,
+                matchExplanation: match.matchExplanation,
+                matchedSkills: match.matchedSkills,
+                missingSkills: match.missingSkills,
+              },
             },
-            $set: {
-              matchScore: match.matchScore,
-              matchExplanation: match.matchExplanation,
-              matchedSkills: match.matchedSkills,
-              missingSkills: match.missingSkills,
-            },
-          },
-          { upsert: true, new: true }
-        );
-      } catch (err) {
-        // Ignore duplicate key errors
-        if (err.code !== 11000) console.warn('Application upsert error:', err.message);
-      }
-    }
+            { upsert: true, new: true }
+          );
+          // ✅ Return applicationId so frontend can shortlist without an extra GET
+          return { ...match, applicationId: app._id.toString() };
+        } catch (err) {
+          if (err.code !== 11000) console.warn('Application upsert error:', err.message);
+          return match;
+        }
+      })
+    );
 
-    res.json({ candidates: matches, total: matches.length });
+    res.json({ candidates: matchesWithAppId, total: matchesWithAppId.length });
   } catch (error) {
     next(error);
   }

@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { ArrowRight, CheckCircle, XCircle, Play, MapPin, Briefcase, Users, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, CheckCircle, XCircle, Play, MapPin, Briefcase, Users, LayoutDashboard, Zap } from 'lucide-react';
 import api from '../services/api';
 import Modal from '../components/ui/Modal';
-import Button from '../components/ui/Button';
 
 const scoreColor = (s) =>
   s >= 80 ? { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', stroke: '#10b981', label: 'Excellent Match' }
@@ -41,6 +40,7 @@ const JobCandidates = () => {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [videoCandidate, setVideoCandidate] = useState(null);
+  // ✅ Fix: track moving by applicationId, not candidateId
   const [movingId, setMovingId] = useState(null);
 
   useEffect(() => {
@@ -63,16 +63,22 @@ const JobCandidates = () => {
     }
   };
 
-  const moveToScreening = async (candidateId) => {
+  // ✅ Fix: use applicationId directly from the candidates response (no extra GET)
+  const moveToScreening = async (applicationId, candidateId) => {
+    if (!applicationId) {
+      toast.error('Application ID not found. Please refresh.');
+      return;
+    }
     setMovingId(candidateId);
     try {
-      // Find the application
-      const appsRes = await api.get(`/applications/job/${id}`);
-      const app = appsRes.data.applications?.find(a => a.candidateId?._id === candidateId || a.candidateId === candidateId);
-      if (app) {
-        await api.patch(`/applications/${app._id}/stage`, { stage: 'screened' });
-        toast.success('Moved to Screening!');
-      }
+      await api.patch(`/applications/${applicationId}/stage`, { stage: 'screened' });
+      toast.success('Moved to Screening!');
+      // Update local state to reflect change
+      setCandidates(prev =>
+        prev.map(c =>
+          c.candidate._id === candidateId ? { ...c, stage: 'screened' } : c
+        )
+      );
     } catch (err) {
       toast.error('Failed to update stage');
     } finally {
@@ -111,12 +117,12 @@ const JobCandidates = () => {
         </motion.div>
       )}
 
-      {/* Candidates */}
+      {/* Candidates header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="section-heading mb-0">
+        <h2 className="section-heading mb-0 flex items-center gap-3">
           AI-Ranked Candidates
           {!loading && (
-            <span className="ml-3 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-sm font-medium">
+            <span className="px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-sm font-medium">
               {candidates.length} matched
             </span>
           )}
@@ -146,8 +152,9 @@ const JobCandidates = () => {
         </div>
       ) : (
         <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-4">
-          {candidates.map(({ candidate, matchScore, matchExplanation, matchedSkills, missingSkills }, idx) => {
+          {candidates.map(({ candidate, matchScore, matchExplanation, matchedSkills, missingSkills, applicationId }, idx) => {
             const { text, bg, border, label } = scoreColor(matchScore);
+            const isMoving = movingId === candidate._id;
             return (
               <motion.div key={candidate._id} variants={fadeUp} className="card hover:shadow-lg transition-shadow">
                 <div className="flex flex-col md:flex-row gap-6">
@@ -170,6 +177,17 @@ const JobCandidates = () => {
                         <p className="text-sm text-slate-600 italic mb-3 border-l-2 border-brand-300 pl-3">
                           "{matchExplanation}"
                         </p>
+                      )}
+
+                      {/* AI Summary */}
+                      {candidate.aiSummary && (
+                        <div className="mb-3 p-2.5 rounded-lg bg-brand-50 border border-brand-100">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Zap className="w-3 h-3 text-brand-500" />
+                            <span className="text-xs font-semibold text-brand-600">AI Profile</span>
+                          </div>
+                          <p className="text-xs text-slate-600 italic">"{candidate.aiSummary}"</p>
+                        </div>
                       )}
 
                       {/* Skills */}
@@ -213,12 +231,13 @@ const JobCandidates = () => {
                           Watch
                         </button>
                       )}
+                      {/* ✅ Fix: pass applicationId directly, no extra API call */}
                       <button
-                        onClick={() => moveToScreening(candidate._id)}
-                        disabled={movingId === candidate._id}
-                        className="flex items-center gap-1 text-sm px-3 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors font-medium"
+                        onClick={() => moveToScreening(applicationId, candidate._id)}
+                        disabled={isMoving}
+                        className="flex items-center gap-1 text-sm px-3 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors font-medium disabled:opacity-60"
                       >
-                        Shortlist <ArrowRight className="w-4 h-4" />
+                        {isMoving ? '...' : <>Shortlist <ArrowRight className="w-4 h-4" /></>}
                       </button>
                     </div>
                   </div>
