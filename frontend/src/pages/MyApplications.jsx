@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { CheckCircle, Clock, Briefcase, Calendar } from 'lucide-react';
+import { CheckCircle, Clock, Briefcase, Calendar, Video, AlertCircle, ExternalLink, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -49,15 +49,40 @@ const MyApplications = () => {
   const { user } = useAuth();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmingIdx, setConfirmingIdx] = useState(null);
 
   useEffect(() => {
-    if (user?._id) {
-      api.get(`/applications/candidate/${user._id}`)
-        .then(res => setApplications(res.data.applications || []))
-        .catch(() => toast.error('Failed to load applications'))
-        .finally(() => setLoading(false));
-    }
+    fetchData();
   }, [user?._id]);
+
+  const fetchData = async () => {
+    if (!user?._id) return;
+    setLoading(true);
+    try {
+      const res = await api.get(`/applications/candidate/${user._id}`);
+      setApplications(res.data.applications || []);
+    } catch (err) {
+      toast.error('Failed to load applications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmSlot = async (applicationId, slotIndex) => {
+    setConfirmingIdx(`${applicationId}-${slotIndex}`);
+    try {
+      const res = await api.post('/scheduling/confirm-slot', {
+        applicationId,
+        slotIndex
+      });
+      toast.success('Interview scheduled successfully! Jitsi link generated.');
+      fetchData(); // refresh list to show scheduled slot and link
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to confirm interview slot');
+    } finally {
+      setConfirmingIdx(null);
+    }
+  };
 
   const stagger = { animate: { transition: { staggerChildren: 0.08 } } };
   const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
@@ -123,6 +148,80 @@ const MyApplications = () => {
               {app.matchExplanation && (
                 <div className="mt-3 pt-3 border-t border-slate-100">
                   <p className="text-sm text-slate-500 italic">"{app.matchExplanation}"</p>
+                </div>
+              )}
+
+              {/* Phase 5: Interview Scheduling Section */}
+              {app.stage === 'interview' && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  {app.scheduledSlot ? (
+                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                          <Video className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-emerald-900">Your Video Interview is Scheduled!</p>
+                          <p className="text-xs text-emerald-700">
+                            Time: {new Date(app.scheduledSlot).toLocaleString('en-IN', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                              timeZone: 'Asia/Kolkata'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={app.jitsiUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-primary bg-emerald-600 hover:bg-emerald-700 gap-2 shrink-0 py-2 text-sm text-white flex items-center justify-center font-bold px-4 rounded-xl shadow-sm transition-colors"
+                      >
+                        Join Room (Jitsi)
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                  ) : app.interviewSlots?.length > 0 ? (
+                    <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl">
+                      <div className="flex gap-2 mb-3">
+                        <AlertCircle className="w-4 h-4 text-brand-600 mt-0.5 shrink-0" />
+                        <p className="text-xs font-bold text-slate-800">Please confirm your preferred interview slot:</p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {app.interviewSlots.map((slot, index) => {
+                          const isConfirming = confirmingIdx === `${app._id}-${index}`;
+                          return (
+                            <div key={index} className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-3 hover:border-brand-300 transition-colors">
+                              <div>
+                                <p className="text-xs font-bold text-slate-900">
+                                  {new Date(slot.time).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                </p>
+                                <p className="text-lg font-extrabold text-brand-600">
+                                  {new Date(slot.time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                                {slot.label && <span className="text-[10px] text-slate-400 font-medium">({slot.label})</span>}
+                              </div>
+                              <button
+                                onClick={() => handleConfirmSlot(app._id, index)}
+                                disabled={confirmingIdx !== null}
+                                className="w-full text-xs font-bold py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center gap-1 transition-colors disabled:opacity-50"
+                              >
+                                {isConfirming ? '...' : <><Check className="w-3.5 h-3.5" /> Confirm</>}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex gap-3 text-slate-600">
+                      <Clock className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-bold text-slate-850">Interview Stage Reached</p>
+                        <p className="text-xs text-slate-400">The recruiter will propose date/time slots for your interview shortly. You will be able to confirm a slot and get the Jitsi Meet video link here.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </motion.div>

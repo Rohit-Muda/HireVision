@@ -14,6 +14,7 @@ initializeFirebase();
 connectDB();
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy for Cloud Run load balancer and express-rate-limit
 const PORT = process.env.PORT || 8080;
 
 // ─── Security & CORS ─────────────────────────────────────────────────────────
@@ -38,6 +39,7 @@ const authLimiter = rateLimit({
   message: { error: 'Too many login attempts. Please wait 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
 });
 
 const videoAnalysisLimiter = rateLimit({
@@ -46,6 +48,7 @@ const videoAnalysisLimiter = rateLimit({
   message: { error: 'Video analysis limit reached. You can analyze 10 videos per hour.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
 });
 
 const apiLimiter = rateLimit({
@@ -55,6 +58,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => req.path === '/api/health', // never throttle health checks
+  validate: false,
 });
 
 // ─── Routes ──────────────────────────────────────────────────────────────────

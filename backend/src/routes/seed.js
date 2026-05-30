@@ -22,9 +22,97 @@ const SEED_JOBS = [
 ];
 
 const SEED_CANDIDATES = [
-  { name: 'Arjun Patel', email: 'arjun@test.com', headline: 'Full-Stack Developer | React & Node.js', skills: ['React', 'JavaScript', 'Node.js', 'MongoDB', 'CSS', 'Git'], experienceSummary: '3 years of full-stack development experience. Built multiple production web applications using React and Node.js.', communicationScore: 8, aiSummary: 'Experienced full-stack developer with 3 years of production experience in React and Node.js. Demonstrates strong problem-solving ability and clear, confident communication.', location: 'Bangalore', education: 'B.Tech Computer Science, VIT', confidenceIndicators: 'High confidence, clear articulation, well-structured delivery' },
-  { name: 'Sneha Kumar', email: 'sneha@test.com', headline: 'Frontend Developer | React | UI/UX Enthusiast', skills: ['React', 'TypeScript', 'Figma', 'Tailwind CSS', 'HTML', 'JavaScript'], experienceSummary: '2 years focused on frontend development with React. Strong design skills with Figma. Passionate about user experience.', communicationScore: 9, aiSummary: 'Creative frontend developer combining strong React skills with UI/UX design expertise. Excellent communicator with a keen eye for detail and user-centric design thinking.', location: 'Mumbai', education: 'BCA, Mumbai University', confidenceIndicators: 'Exceptional confidence, engaging delivery, minimal filler words' },
-  { name: 'Vikram Reddy', email: 'vikram@test.com', headline: 'Backend Developer | Node.js | Cloud', skills: ['Node.js', 'Python', 'MongoDB', 'Docker', 'AWS', 'REST APIs'], experienceSummary: '4 years of backend development. Expert in building scalable APIs and microservices. Strong cloud deployment experience.', communicationScore: 7, aiSummary: 'Senior backend developer with 4 years of experience building scalable systems. Strong technical skills in Node.js and cloud infrastructure with solid communication abilities.', location: 'Hyderabad', education: 'M.Tech, IIT Hyderabad', confidenceIndicators: 'Good confidence, technical clarity, slightly fast pacing' },
+  {
+    name: 'Arjun Patel',
+    email: 'arjun@test.com',
+    headline: 'Full-Stack Developer | React & Node.js',
+    skills: ['React', 'JavaScript', 'Node.js', 'MongoDB', 'CSS', 'Git'],
+    experienceSummary: '3 years of full-stack development experience. Built multiple production web applications using React and Node.js.',
+    communicationScore: 8,
+    aiSummary: 'Experienced full-stack developer with 3 years of production experience in React and Node.js. Demonstrates strong problem-solving ability and clear, confident communication.',
+    location: 'Bangalore',
+    education: 'B.Tech Computer Science, VIT',
+    confidenceIndicators: 'High confidence, clear articulation, well-structured delivery',
+    skillBadges: [
+      { skill: 'React', score: 4, total: 5, earnedAt: new Date(Date.now() - 172800000) },
+      { skill: 'JavaScript', score: 5, total: 5, earnedAt: new Date(Date.now() - 86400000) }
+    ],
+    careerRecommendations: {
+      topJobCategories: ['Senior React Developer', 'Full-Stack Developer', 'Frontend Engineer'],
+      skillsToLearn: ['TypeScript', 'Next.js', 'System Design'],
+      careerAdvice: 'Master state management with Redux/Zustand and learn TypeScript to move to senior full-stack roles.',
+      salaryPotential: '₹14-22 LPA',
+      generatedAt: new Date()
+    }
+  },
+  {
+    name: 'Sneha Kumar',
+    email: 'sneha@test.com',
+    headline: 'Frontend Developer | React | UI/UX Enthusiast',
+    skills: ['React', 'TypeScript', 'Figma', 'Tailwind CSS', 'HTML', 'JavaScript'],
+    experienceSummary: '2 years focused on frontend development with React. Strong design skills with Figma. Passionate about user experience.',
+    communicationScore: 9,
+    aiSummary: 'Creative frontend developer combining strong React skills with UI/UX design expertise. Excellent communicator with a keen eye for detail and user-centric design thinking.',
+    location: 'Mumbai',
+    education: 'BCA, Mumbai University',
+    confidenceIndicators: 'Exceptional confidence, engaging delivery, minimal filler words',
+    skillBadges: [
+      { skill: 'React', score: 5, total: 5, earnedAt: new Date(Date.now() - 172800000) },
+      { skill: 'Figma', score: 5, total: 5, earnedAt: new Date(Date.now() - 86400000) }
+    ],
+    careerRecommendations: {
+      topJobCategories: ['Frontend Developer', 'UI/UX Designer & Developer', 'Product Designer'],
+      skillsToLearn: ['Tailwind CSS', 'Framer Motion', 'Web Accessibility'],
+      careerAdvice: 'Focus on advanced animation frameworks like Framer Motion to leverage your design eye in frontend products.',
+      salaryPotential: '₹12-18 LPA',
+      generatedAt: new Date()
+    }
+  },
+  {
+    name: 'Vikram Reddy',
+    email: 'vikram@test.com',
+    headline: 'Backend Developer | Node.js | Cloud',
+    skills: ['Node.js', 'Python', 'MongoDB', 'Docker', 'AWS', 'REST APIs'],
+    experienceSummary: '4 years of backend development. Expert in building scalable APIs and microservices. Strong cloud deployment experience.',
+    communicationScore: 7,
+    aiSummary: 'Senior backend developer with 4 years of experience building scalable systems. Strong technical skills in Node.js and cloud infrastructure with solid communication abilities.',
+    location: 'Hyderabad',
+    education: 'M.Tech, IIT Hyderabad',
+    confidenceIndicators: 'Good confidence, technical clarity, slightly fast pacing',
+    skillBadges: [
+      { skill: 'Node.js', score: 4, total: 5, earnedAt: new Date(Date.now() - 172800000) }
+    ],
+    careerRecommendations: {
+      topJobCategories: ['Backend Developer (Node.js)', 'Cloud Architect', 'DevOps Engineer'],
+      skillsToLearn: ['Docker', 'Kubernetes', 'Redis', 'GraphQL'],
+      careerAdvice: 'Develop experience with container orchestrations (Kubernetes) and caching layers (Redis) to unlock high-scale roles.',
+      salaryPotential: '₹16-25 LPA',
+      generatedAt: new Date()
+    }
+  },
+  {
+    name: 'Rohan Sharma',
+    email: 'rohan@test.com',
+    headline: 'Frontend Engineer | React & Tailwind',
+    skills: ['React', 'Tailwind CSS', 'JavaScript', 'HTML', 'CSS', 'Redux'],
+    experienceSummary: '1.5 years of experience developing responsive web applications.',
+    communicationScore: 8,
+    aiSummary: 'Detail-oriented frontend engineer with 1.5 years of experience specializing in React and Tailwind CSS. Demonstrates high visual excellence and clear coding logic.',
+    location: 'Bangalore',
+    education: 'B.Sc Computer Science, Delhi University',
+    confidenceIndicators: 'High energy, precise delivery, minimal filler words',
+    skillBadges: [
+      { skill: 'React', score: 5, total: 5, earnedAt: new Date() },
+      { skill: 'JavaScript', score: 4, total: 5, earnedAt: new Date() }
+    ],
+    careerRecommendations: {
+      topJobCategories: ['Senior React Developer', 'UI Engineer', 'Frontend Team Lead'],
+      skillsToLearn: ['TypeScript', 'Next.js'],
+      careerAdvice: 'Focus on mastering Next.js and TypeScript to transition to a senior engineer role.',
+      salaryPotential: '₹10-16 LPA',
+      generatedAt: new Date()
+    }
+  }
 ];
 
 // POST /api/seed
@@ -35,6 +123,7 @@ router.post('/', async (req, res) => {
     // Clear existing seed data
     await User.deleteMany({ email: { $in: [...SEED_RECRUITERS.map(r => r.email), ...SEED_CANDIDATES.map(c => c.email)] } });
     await Job.deleteMany({ company: { $in: ['TechCorp India', 'DesignHub', 'DataFlow AI'] } });
+    await Application.deleteMany({});
 
     // Create Firebase users and MongoDB recruiter records
     const recruiterMap = {};
@@ -105,8 +194,84 @@ router.post('/', async (req, res) => {
       console.log(`✅ Candidate created: ${cand.name}`);
     }
 
+    // Seed applications
+    console.log('🌱 Seeding applications...');
+    const allJobs = await Job.find({});
+    const allCandidates = await User.find({ role: 'candidate' });
+
+    // Map jobs by title
+    const reactJob = allJobs.find(j => j.title === 'Senior React Developer');
+    const backendJob = allJobs.find(j => j.title === 'Backend Developer (Node.js)');
+
+    const arjun = allCandidates.find(c => c.email === 'arjun@test.com');
+    const sneha = allCandidates.find(c => c.email === 'sneha@test.com');
+    const vikram = allCandidates.find(c => c.email === 'vikram@test.com');
+    const rohan = allCandidates.find(c => c.email === 'rohan@test.com');
+
+    if (reactJob && arjun) {
+      await Application.create({
+        candidateId: arjun._id,
+        jobId: reactJob._id,
+        matchScore: 78,
+        matchExplanation: 'Arjun has strong full-stack skills with React and Node.js. Lacks specific testing frameworks in his current profile.',
+        matchedSkills: ['React', 'JavaScript', 'CSS'],
+        missingSkills: ['TypeScript', 'Testing'],
+        stage: 'screened',
+        notes: 'Good candidate, communication is confident.',
+      });
+    }
+
+    if (reactJob && sneha) {
+      await Application.create({
+        candidateId: sneha._id,
+        jobId: reactJob._id,
+        matchScore: 88,
+        matchExplanation: 'Sneha shows brilliant frontend skills with React and Tailwind CSS. Figma UI/UX background matches senior user-experience requirements.',
+        matchedSkills: ['React', 'TypeScript', 'HTML', 'JavaScript'],
+        missingSkills: ['Testing'],
+        stage: 'interview',
+        notes: 'Highly confident, scheduled interview slots.',
+        interviewSlots: [
+          { time: new Date(Date.now() + 86400000 * 2), label: '2 days from now (Morning)' },
+          { time: new Date(Date.now() + 86400000 * 3), label: '3 days from now (Afternoon)' },
+        ],
+      });
+    }
+
+    if (reactJob && rohan) {
+      await Application.create({
+        candidateId: rohan._id,
+        jobId: reactJob._id,
+        matchScore: 82,
+        matchExplanation: 'Rohan is a solid frontend specialist with strong React and CSS foundations.',
+        matchedSkills: ['React', 'JavaScript', 'CSS'],
+        missingSkills: ['TypeScript', 'Testing'],
+        stage: 'applied',
+        notes: 'Need to test testing skills.',
+      });
+    }
+
+    if (backendJob && vikram) {
+      await Application.create({
+        candidateId: vikram._id,
+        jobId: backendJob._id,
+        matchScore: 94,
+        matchExplanation: 'Vikram has excellent Node.js experience and backend expertise. Proficient in MongoDB and building scale APIs.',
+        matchedSkills: ['Node.js', 'MongoDB', 'REST APIs'],
+        missingSkills: ['Docker'],
+        stage: 'applied',
+        notes: 'Top fit for backend engineering.',
+      });
+    }
+
     console.log('🎉 Seed complete!');
-    res.json({ message: 'Database seeded successfully', recruiters: SEED_RECRUITERS.length, jobs: SEED_JOBS.length, candidates: SEED_CANDIDATES.length });
+    res.json({
+      message: 'Database seeded successfully',
+      recruiters: SEED_RECRUITERS.length,
+      jobs: SEED_JOBS.length,
+      candidates: SEED_CANDIDATES.length,
+      applications: 4
+    });
   } catch (error) {
     console.error('❌ Seed error:', error);
     res.status(500).json({ error: error.message });

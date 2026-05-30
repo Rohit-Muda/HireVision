@@ -273,11 +273,11 @@ const VideoRecord = () => {
 
     try {
       // ── Determine MIME type explicitly (MediaRecorder may produce empty type) ──
-      // If blob type is empty string, browsers send it as text/plain via FormData.
+      // If blob type is empty string or text/plain, browsers send it as text/plain via FormData.
       // Force an explicit MIME type to ensure multer accepts it.
-      const blobMime = videoBlob.type && videoBlob.type !== ''
-        ? videoBlob.type
-        : 'video/webm';
+      const blobMime = (!videoBlob.type || videoBlob.type === 'text/plain' || videoBlob.type === '')
+        ? 'video/webm'
+        : videoBlob.type;
       const ext = blobMime.includes('mp4') ? 'mp4' : blobMime.includes('mov') ? 'mov' : 'webm';
 
       // Create a typed blob so FormData sends the correct Content-Type part header
