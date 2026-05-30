@@ -29,9 +29,7 @@ const KanbanCard = ({ application, provided, onProposeSlots }) => {
       className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
     >
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white text-xs font-bold shrink-0">
-          {c?.name?.charAt(0)}
-        </div>
+        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(c?.name || 'Candidate')}&background=0f172a&color=ffffff&bold=true`} alt={c?.name} className="w-8 h-8 rounded-full shrink-0 border border-slate-200/60 shadow-sm" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-900 truncate">{c?.name}</p>
         </div>

@@ -175,9 +175,7 @@ const JobBoard = () => {
               >
                 {/* Company */}
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm shrink-0">
-                    {job.company?.charAt(0)}
-                  </div>
+                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(job.company || 'Company')}&background=f1f5f9&color=0f172a&bold=true`} alt={job.company} className="w-10 h-10 rounded-xl shrink-0 border border-slate-200/60 shadow-sm" />
                   <div className="min-w-0">
                     <h3 className="font-bold text-slate-900 group-hover:text-slate-700 transition-colors line-clamp-1">{job.title}</h3>
                     <p className="text-sm text-slate-500 truncate">{job.company}</p>
@@ -247,9 +245,7 @@ const JobBoard = () => {
         {selectedJob && (
           <div className="p-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xl">
-                {selectedJob.company?.charAt(0)}
-              </div>
+              <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedJob.company || 'Company')}&background=f1f5f9&color=0f172a&bold=true&size=128`} alt={selectedJob.company} className="w-14 h-14 rounded-xl shrink-0 border border-slate-200/60 shadow-sm" />
               <div>
                 <p className="text-lg font-bold text-slate-900">{selectedJob.company}</p>
                 <div className="flex items-center gap-3 text-sm text-slate-500">

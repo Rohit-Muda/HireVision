@@ -20,7 +20,7 @@
 @layer components {
   /* Minimal card */
   .glass-card {
-    @apply bg-white border border-slate-200 rounded-md shadow-sm;
+    @apply bg-white border border-slate-200/80 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)];
   }
   
   /* Primary solid button */
@@ -53,7 +53,7 @@
 
   /* Card */
   .card {
-    @apply bg-white rounded-md shadow-sm border border-slate-200 p-6;
+    @apply bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200/80 p-6 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)];
   }
   
   /* Match score colors */
@@ -64,7 +64,7 @@
   /* Skill badge */
   .skill-badge {
     @apply inline-flex items-center px-3 py-1 rounded-md text-sm font-medium
-           bg-slate-100 text-slate-700 border border-slate-200;
+           bg-slate-50 text-slate-700 border border-slate-200/60 shadow-sm;
   }
   
   .skill-matched {

@@ -275,7 +275,7 @@ const Landing = () => {
             {/* Mock candidate card */}
             <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-white font-medium text-lg">A</div>
+                <img src={`https://ui-avatars.com/api/?name=Arjun+Patel&background=0f172a&color=ffffff&bold=true`} alt="Arjun Patel" className="w-12 h-12 rounded-full shrink-0 border border-slate-200/60 shadow-sm" />
                 <div className="flex-1">
                   <div className="font-semibold text-slate-900">Arjun Patel</div>
                   <div className="text-sm text-slate-500">Full-Stack Developer, Mumbai</div>
@@ -336,9 +336,7 @@ const Landing = () => {
               </div>
               <p className="text-slate-700 text-sm leading-relaxed mb-6">"{text}"</p>
               <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                <div className={`w-10 h-10 rounded-full ${color} flex items-center justify-center text-white font-medium text-sm`}>
-                  {avatar}
-                </div>
+                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color.replace('bg-slate-', 'slate-') === 'slate-800' ? '0f172a' : '0f172a'}&color=ffffff&bold=true`} alt={name} className="w-10 h-10 rounded-full shrink-0 border border-slate-200/60 shadow-sm" />
                 <div>
                   <p className="font-semibold text-slate-900 text-sm">{name}</p>
                   <p className="text-slate-500 text-xs">{role}</p>

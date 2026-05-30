@@ -112,9 +112,7 @@ const MyApplications = () => {
                 {/* Job info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold shrink-0">
-                      {app.jobId?.company?.charAt(0)}
-                    </div>
+                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(app.jobId?.company || 'Company')}&background=f1f5f9&color=0f172a&bold=true`} alt={app.jobId?.company} className="w-10 h-10 rounded-xl shrink-0 border border-slate-200/60 shadow-sm" />
                     <div>
                       <h3 className="font-bold text-slate-900">{app.jobId?.title || 'Job'}</h3>
                       <p className="text-sm text-slate-500">{app.jobId?.company} · {app.jobId?.location}</p>

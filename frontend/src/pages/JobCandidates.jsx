@@ -160,9 +160,7 @@ const JobCandidates = () => {
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Left: candidate info */}
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-white text-xl font-bold shrink-0">
-                      {candidate.name?.charAt(0)}
-                    </div>
+                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name || 'Candidate')}&background=0f172a&color=ffffff&bold=true`} alt={candidate.name} className="w-14 h-14 rounded-full shrink-0 border border-slate-200/60 shadow-sm" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-slate-900 text-lg">{candidate.name}</h3>

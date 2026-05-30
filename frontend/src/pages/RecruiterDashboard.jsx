@@ -103,9 +103,7 @@ const RecruiterDashboard = () => {
               <motion.div key={job._id} variants={fadeUp} className="card hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold shrink-0">
-                      {job.company?.charAt(0)}
-                    </div>
+                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(job.company || 'Company')}&background=f1f5f9&color=0f172a&bold=true`} alt={job.company} className="w-10 h-10 rounded-xl shrink-0 border border-slate-200/60 shadow-sm" />
                     <div>
                       <h3 className="font-bold text-slate-900">{job.title}</h3>
                       <div className="flex items-center gap-3 text-sm text-slate-500 mt-0.5">

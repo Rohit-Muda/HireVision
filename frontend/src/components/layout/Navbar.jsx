@@ -77,9 +77,7 @@ const Navbar = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-50 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white text-sm font-medium">
-                    {user.name?.charAt(0).toUpperCase()}
-                  </div>
+                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=0f172a&color=ffffff&bold=true`} alt={user.name} className="w-8 h-8 rounded-full shrink-0 border border-slate-200/60 shadow-sm" />
                   <span className="hidden sm:block text-sm font-medium text-slate-700 max-w-[120px] truncate">
                     {user.name}
                   </span>
