@@ -17,6 +17,7 @@ import JobCandidates from './pages/JobCandidates';
 import KanbanPipeline from './pages/KanbanPipeline';
 import MyApplications from './pages/MyApplications';
 import CandidateSearch from './pages/CandidateSearch';
+import PracticeInterview from './pages/PracticeInterview';
 
 // Route guards
 const RequireAuth = ({ role }) => {
@@ -58,6 +59,7 @@ const router = createBrowserRouter([
           { path: 'dashboard', element: <CandidateDashboard /> },
           { path: 'record', element: <VideoRecord /> },
           { path: 'jobs', element: <JobBoard /> },
+          { path: 'jobs/:jobId/practice', element: <PracticeInterview /> },
           { path: 'dashboard/applications', element: <MyApplications /> },
         ],
       },

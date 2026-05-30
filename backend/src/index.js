@@ -64,6 +64,9 @@ app.use('/api/candidates', require('./routes/candidates'));
 app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/seed', require('./routes/seed'));
+app.use('/api/interview', require('./routes/interview'));
+app.use('/api/assessments', require('./routes/assessments'));
+app.use('/api/scheduling', require('./routes/scheduling'));
 
 // Recruiter profile update
 app.put('/api/recruiters/profile', require('./middleware/auth').verifyFirebaseToken, async (req, res, next) => {

@@ -109,6 +109,14 @@ const analyzeVideoResume = async (req, res, next) => {
       videoAnalyzedAt: new Date(),
     };
 
+    // Save career recommendations if generated
+    if (analysis.careerRecommendations) {
+      updateData.careerRecommendations = {
+        ...analysis.careerRecommendations,
+        generatedAt: new Date(),
+      };
+    }
+
     const updatedUser = await User.findByIdAndUpdate(req.user._id, updateData, { new: true });
 
     res.json({

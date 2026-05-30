@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Search, MapPin, Briefcase, DollarSign, Plus, Filter } from 'lucide-react';
+import { Search, MapPin, Briefcase, DollarSign, Plus, Filter, Brain } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/ui/Modal';
@@ -211,22 +211,30 @@ const JobBoard = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
                   <div className="flex items-center gap-1 text-sm font-semibold text-emerald-600">
                     <DollarSign className="w-4 h-4" />
                     {job.salaryRange || 'Negotiable'}
                   </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleApply(job._id); }}
-                    disabled={isApplied || applying === job._id}
-                    className={`text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
-                      isApplied
-                        ? 'bg-emerald-50 text-emerald-600 cursor-default'
-                        : 'bg-brand-600 text-white hover:bg-brand-700 hover:scale-105'
-                    }`}
-                  >
-                    {isApplied ? '✓ Applied' : applying === job._id ? '...' : 'Apply Now'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${job._id}/practice`); }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center gap-1 transition-all"
+                    >
+                      <Brain size={12} /> Practice
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleApply(job._id); }}
+                      disabled={isApplied || applying === job._id}
+                      className={`text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
+                        isApplied
+                          ? 'bg-emerald-50 text-emerald-600 cursor-default'
+                          : 'bg-brand-600 text-white hover:bg-brand-700 hover:scale-105'
+                      }`}
+                    >
+                      {isApplied ? '✓ Applied' : applying === job._id ? '...' : 'Apply'}
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             );
@@ -267,14 +275,22 @@ const JobBoard = () => {
               </div>
             </div>
 
-            <Button
-              onClick={() => { handleApply(selectedJob._id); setSelectedJob(null); }}
-              disabled={appliedIds.has(selectedJob._id)}
-              className="w-full justify-center"
-              size="lg"
-            >
-              {appliedIds.has(selectedJob._id) ? '✓ Already Applied' : 'Apply Now'}
-            </Button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { navigate(`/jobs/${selectedJob._id}/practice`); setSelectedJob(null); }}
+                className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+              >
+                <Brain size={16} /> Practice Interview
+              </button>
+              <Button
+                onClick={() => { handleApply(selectedJob._id); setSelectedJob(null); }}
+                disabled={appliedIds.has(selectedJob._id)}
+                className="flex-1 justify-center"
+                size="lg"
+              >
+                {appliedIds.has(selectedJob._id) ? '✓ Already Applied' : 'Apply Now'}
+              </Button>
+            </div>
           </div>
         )}
       </Modal>

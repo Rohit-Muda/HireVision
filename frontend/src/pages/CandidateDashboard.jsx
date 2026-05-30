@@ -5,11 +5,12 @@ import toast from 'react-hot-toast';
 import {
   Video, Zap, Briefcase, ChevronRight, BarChart3, Play, FileText,
   Upload, Download, CheckCircle, Clock, MapPin, GraduationCap,
-  Star, X
+  Star, X, Brain, Award, TrendingUp, Target, BookOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import Modal from '../components/ui/Modal';
+import SkillAssessment from '../components/ui/SkillAssessment';
 
 // ─── Circular SVG score gauge ─────────────────────────────────────────────────
 const ScoreGauge = ({ score, max = 10 }) => {
@@ -94,7 +95,15 @@ const CandidateDashboard = () => {
   const [loadingApps, setLoadingApps] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
+  const [showAssessment, setShowAssessment] = useState(false);
   const resumeInputRef = useRef(null);
+
+  const handleBadgeEarned = (badge) => {
+    updateUser({
+      ...user,
+      skillBadges: [...(user.skillBadges || []).filter(b => b.skill !== badge.skill), badge],
+    });
+  };
 
   const hasVideo = !!user?.videoAnalyzedAt;
   const hasResume = !!user?.resumeUrl;
@@ -438,6 +447,91 @@ const CandidateDashboard = () => {
           </motion.div>
         )}
       </div>
+
+      {/* ── AI Career Path ─────────────────────────────────────────────────── */}
+      {hasVideo && user?.careerRecommendations?.topJobCategories?.length > 0 && (
+        <motion.div {...fadeUp} className="card mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <TrendingUp size={16} className="text-purple-600" />
+            </div>
+            <h3 className="font-bold text-slate-900">Your AI Career Path</h3>
+            <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full">AI Generated</span>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="bg-blue-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Target size={12} /> Best Fit Roles</p>
+              <ul className="space-y-1">
+                {(user.careerRecommendations.topJobCategories || []).map((cat, i) => (
+                  <li key={i} className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />{cat}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-green-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-green-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Zap size={12} /> Skills to Learn</p>
+              <ul className="space-y-1">
+                {(user.careerRecommendations.skillsToLearn || []).map((skill, i) => (
+                  <li key={i} className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />{skill}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-amber-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Brain size={12} /> Career Advice</p>
+              <p className="text-sm text-gray-800">{user.careerRecommendations.careerAdvice}</p>
+              {user.careerRecommendations.salaryPotential && (
+                <p className="text-xs text-amber-700 font-semibold mt-2">💰 {user.careerRecommendations.salaryPotential}</p>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Skill Badges ────────────────────────────────────────────────────── */}
+      {hasVideo && (
+        <motion.div {...fadeUp} className="card mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                <Award size={16} className="text-amber-600" />
+              </div>
+              <h3 className="font-bold text-slate-900">Skill Badges</h3>
+              <span className="text-xs text-gray-400">Verified by AI quiz</span>
+            </div>
+            <button onClick={() => setShowAssessment(!showAssessment)}
+              className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <BookOpen size={14} /> {showAssessment ? 'Hide' : 'Take Assessment'}
+            </button>
+          </div>
+
+          {/* Earned badges */}
+          {(user?.skillBadges || []).length > 0 ? (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {user.skillBadges.map((badge, i) => (
+                <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${
+                  badge.score >= 4 ? 'bg-green-50 text-green-700 border-green-200' :
+                  badge.score >= 3 ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                  'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                  <Award size={13} />{badge.skill}
+                  <span className="text-xs opacity-70">{badge.score}/{badge.total}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 mb-4">No badges yet. Take an assessment to prove your skills to recruiters.</p>
+          )}
+
+          {/* Assessment panel */}
+          {showAssessment && (
+            <div className="border-t border-gray-100 pt-4">
+              <SkillAssessment skills={user?.skills || []} onBadgeEarned={handleBadgeEarned} />
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Transcript Modal */}
       <Modal isOpen={transcriptOpen} onClose={() => setTranscriptOpen(false)} title="Video Transcript">

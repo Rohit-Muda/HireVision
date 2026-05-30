@@ -22,6 +22,22 @@ const userSchema = new mongoose.Schema(
     headline: { type: String, default: null },
     confidenceIndicators: { type: String, default: null },
     resumeUrl: { type: String, default: null },
+    skillBadges: {
+      type: [{
+        skill: { type: String, required: true },
+        score: { type: Number, required: true },
+        total: { type: Number, default: 5 },
+        earnedAt: { type: Date, default: Date.now },
+      }],
+      default: [],
+    },
+    careerRecommendations: {
+      topJobCategories: { type: [String], default: [] },
+      skillsToLearn: { type: [String], default: [] },
+      careerAdvice: { type: String, default: null },
+      salaryPotential: { type: String, default: null },
+      generatedAt: { type: Date, default: null },
+    },
 
     // Recruiter fields
     companyName: { type: String, default: null },

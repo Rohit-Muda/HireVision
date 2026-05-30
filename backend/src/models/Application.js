@@ -16,6 +16,13 @@ const applicationSchema = new mongoose.Schema(
     notes: { type: String, default: '' },
     appliedAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
+    // Interview scheduling (Phase 5)
+    interviewSlots: {
+      type: [{ time: Date, label: String }],
+      default: [],
+    },
+    scheduledSlot: { type: Date, default: null },
+    jitsiUrl: { type: String, default: null },
   },
   { timestamps: true }
 );
