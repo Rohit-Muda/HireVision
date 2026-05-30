@@ -221,7 +221,7 @@ const analyzeTranscript = async (transcript) => {
 // ─── FALLBACK: Full video analysis via Gemini File API ───────────────────────
 // Only used when browser Speech API is unavailable (Firefox/Safari)
 
-const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
+const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType, apiKey) => {
   const extMap = {
     'video/webm': 'webm', 'video/mp4': 'mp4', 'video/quicktime': 'mov',
     'video/x-msvideo': 'avi', 'video/ogg': 'ogv',
@@ -233,7 +233,7 @@ const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
   console.log(`📤 Uploading ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB to Gemini File API...`);
 
   try {
-    const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
+    const fileManager = new GoogleAIFileManager(apiKey);
     const uploadResult = await fileManager.uploadFile(tmpPath, {
       mimeType,
       displayName: `video_resume_${Date.now()}`,
@@ -259,8 +259,6 @@ const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType) => {
 };
 
 const analyzeVideo = async (videoBuffer, mimeType = 'video/webm') => {
-  const fileUri = await uploadBufferToGeminiFileApi(videoBuffer, mimeType);
-
   const prompt = `Analyze this video resume. Return ONLY a valid JSON object:
 {
   "transcript": "<Complete verbatim transcript>",
@@ -271,7 +269,11 @@ const analyzeVideo = async (videoBuffer, mimeType = 'video/webm') => {
   "aiSummary": "<2-line professional summary in third person>"
 }`;
 
-  return withGeminiRotation(async (genAI) => {
+  return withGeminiRotation(async (genAI, apiKey) => {
+    // 1. Upload using the specific key for this rotation
+    const fileUri = await uploadBufferToGeminiFileApi(videoBuffer, mimeType, apiKey);
+
+    // 2. Generate content using the same key's client
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       systemInstruction: 'You are an expert HR analyst. Always respond with valid JSON only.',

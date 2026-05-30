@@ -59,7 +59,7 @@ const withGeminiRotation = async (fn) => {
     tried.add(keyIdx);
 
     try {
-      return await fn(clients[keyIdx]);
+      return await fn(clients[keyIdx], GEMINI_KEYS[keyIdx]);
     } catch (err) {
       lastError = err;
       if (isRateLimitError(err)) {
