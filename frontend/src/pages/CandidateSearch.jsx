@@ -48,7 +48,7 @@ const CandidateSearch = () => {
       {/* Header */}
       <motion.div {...fadeUp} className="mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900">
-          Candidate <span className="text-gradient">Search</span>
+          Candidate <span className="text-slate-900">Search</span>
         </h1>
         <p className="text-slate-500 mt-1">Find top talent with AI-powered profiles and video resumes</p>
       </motion.div>
@@ -150,7 +150,7 @@ const CandidateSearch = () => {
               <div className="flex flex-col md:flex-row gap-4">
                 {/* Avatar + name */}
                 <div className="flex items-start gap-4 flex-1">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center text-white text-xl font-bold shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-white text-xl font-bold shrink-0 group-hover:scale-105 transition-transform">
                     {candidate.name?.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -229,7 +229,7 @@ const CandidateSearch = () => {
 
             {/* AI Summary */}
             {selectedCandidate.aiSummary && (
-              <div className="p-4 rounded-xl bg-gradient-to-r from-brand-50 to-violet-50 border border-brand-100">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <p className="text-xs font-bold text-brand-700 mb-1 flex items-center gap-1">
                   <Zap className="w-3 h-3" /> AI Profile Summary
                 </p>

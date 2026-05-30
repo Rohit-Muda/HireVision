@@ -146,7 +146,7 @@ export default function PracticeInterview() {
 
         {phase === 'results' && results && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white text-center shadow-lg">
+            <div className="bg-slate-900 rounded-2xl p-6 text-white text-center shadow-lg">
               <Trophy className="w-10 h-10 mx-auto mb-3 text-yellow-300" />
               <div className="text-5xl font-black mb-1">{results.overallReadinessScore}<span className="text-2xl opacity-70">/100</span></div>
               <p className="text-blue-100 text-sm mb-3">Interview Readiness Score</p>

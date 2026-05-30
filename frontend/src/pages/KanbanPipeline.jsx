@@ -29,7 +29,7 @@ const KanbanCard = ({ application, provided, onProposeSlots }) => {
       className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
     >
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white text-xs font-bold shrink-0">
           {c?.name?.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">

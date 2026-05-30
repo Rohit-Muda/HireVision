@@ -112,7 +112,7 @@ const MyApplications = () => {
                 {/* Job info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-violet-100 flex items-center justify-center text-brand-700 font-bold shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold shrink-0">
                       {app.jobId?.company?.charAt(0)}
                     </div>
                     <div>

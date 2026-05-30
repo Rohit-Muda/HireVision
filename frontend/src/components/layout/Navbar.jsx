@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import {
   Video, Briefcase, LogOut, Menu, X, ChevronDown,
-  User, LayoutDashboard, PlusCircle, List, Search
+  LayoutDashboard, PlusCircle, Search, List
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -25,28 +25,28 @@ const Navbar = () => {
   const candidateLinks = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/jobs', label: 'Browse Jobs', icon: Briefcase },
-    { to: '/record', label: 'Record Resume', icon: Video },
-    { to: '/dashboard/applications', label: 'My Applications', icon: List },
+    { to: '/record', label: 'Record', icon: Video },
+    { to: '/dashboard/applications', label: 'Applications', icon: List },
   ];
 
   const recruiterLinks = [
     { to: '/recruiter', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/recruiter/post-job', label: 'Post Job', icon: PlusCircle },
-    { to: '/recruiter/search', label: 'Find Talent', icon: Search },
+    { to: '/recruiter/search', label: 'Candidates', icon: Search },
   ];
 
   const navLinks = isCandidate ? candidateLinks : isRecruiter ? recruiterLinks : [];
 
   return (
-    <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+    <nav className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-extrabold text-xl">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-600 to-violet-600 flex items-center justify-center">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
+            <div className="w-8 h-8 rounded-md bg-slate-900 flex items-center justify-center">
               <Video className="w-4 h-4 text-white" />
             </div>
-            <span className="text-gradient">HireVision</span>
+            <span className="tracking-tight">HireVision</span>
           </Link>
 
           {/* Desktop nav links */}
@@ -56,10 +56,10 @@ const Navbar = () => {
                 <Link
                   key={to}
                   to={to}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === to
-                      ? 'bg-brand-50 text-brand-700'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-slate-100 text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -75,9 +75,9 @@ const Navbar = () => {
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-50 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center text-white text-sm font-bold">
+                  <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white text-sm font-medium">
                     {user.name?.charAt(0).toUpperCase()}
                   </div>
                   <span className="hidden sm:block text-sm font-medium text-slate-700 max-w-[120px] truncate">
@@ -91,16 +91,16 @@ const Navbar = () => {
                       initial={{ opacity: 0, scale: 0.95, y: -10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50"
+                      className="absolute right-0 mt-1 w-52 bg-white rounded-md shadow-lg border border-slate-200 py-1 z-50"
                       onMouseLeave={() => setDropdownOpen(false)}
                     >
                       <div className="px-4 py-3 border-b border-slate-100">
-                        <p className="font-semibold text-slate-900 truncate">{user.name}</p>
+                         <p className="font-medium text-slate-900 truncate">{user.name}</p>
                         <p className="text-xs text-slate-500 capitalize">{user.role}</p>
                       </div>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-slate-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign Out
@@ -119,7 +119,7 @@ const Navbar = () => {
             {/* Mobile menu toggle */}
             {user && (
               <button
-                className="md:hidden p-2 rounded-lg hover:bg-slate-100"
+                className="md:hidden p-2 rounded-md hover:bg-slate-100 text-slate-600"
                 onClick={() => setMobileOpen(!mobileOpen)}
               >
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -144,7 +144,7 @@ const Navbar = () => {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-2 px-3 py-3 text-sm font-medium transition-colors ${
                     location.pathname === to
-                      ? 'text-brand-700 bg-brand-50 rounded-lg'
+                      ? 'text-slate-900 bg-slate-100 rounded-md'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -152,7 +152,7 @@ const Navbar = () => {
                   {label}
                 </Link>
               ))}
-              <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-3 text-sm text-red-600 w-full">
+              <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-3 text-sm text-red-600 w-full hover:bg-slate-50 rounded-md">
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </button>

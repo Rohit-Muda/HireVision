@@ -42,7 +42,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-mesh flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -51,35 +51,35 @@ const Login = () => {
       >
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 font-extrabold text-2xl">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-violet-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center">
               <Video className="w-5 h-5 text-white" />
             </div>
-            <span className="text-gradient">HireVision</span>
+            <span className="text-slate-900">HireVision</span>
           </Link>
           <p className="text-slate-500 mt-2">Sign in to your account</p>
         </div>
 
         <div className="card">
           {/* Demo quick login */}
-          <div className="mb-6 p-4 rounded-xl bg-brand-50 border border-brand-100">
-            <p className="text-xs font-bold text-brand-700 mb-2 uppercase tracking-wide">⚡ 1-Click Demo Access</p>
+          <div className="mb-6 p-4 rounded-xl bg-slate-100 border border-slate-200">
+            <p className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">1-Click Demo Access</p>
             <div className="flex gap-2">
               {[
-                { email: 'arjun@test.com', label: '🧑‍💻 Demo Candidate' },
-                { email: 'priya@techcorp.in', label: '🏢 Demo Recruiter' },
+                { email: 'arjun@test.com', label: 'Demo Candidate' },
+                { email: 'priya@techcorp.in', label: 'Demo Recruiter' },
               ].map(({ email, label }) => (
                 <button
                   key={email}
                   type="button"
                   onClick={() => demoLogin(email)}
                   disabled={loading}
-                  className="flex-1 text-xs bg-white border border-brand-200 text-brand-700 font-semibold py-2 px-3 rounded-lg hover:bg-brand-600 hover:text-white hover:border-brand-600 transition-all disabled:opacity-60"
+                  className="flex-1 text-xs bg-white border border-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-lg hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all disabled:opacity-60"
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-brand-500 mt-2 text-center">Clicks once and logs in immediately</p>
+            <p className="text-xs text-slate-500 mt-2 text-center">Clicks once and logs in immediately</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -117,7 +117,7 @@ const Login = () => {
 
           <p className="text-center text-sm text-slate-500 mt-6">
             New to HireVision?{' '}
-            <Link to="/register" className="text-brand-600 font-semibold hover:underline">Create account</Link>
+            <Link to="/register" className="text-slate-900 font-semibold hover:underline">Create account</Link>
           </p>
         </div>
       </motion.div>

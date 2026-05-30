@@ -44,7 +44,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-mesh flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -53,10 +53,10 @@ const Register = () => {
       >
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 font-extrabold text-2xl">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-violet-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center">
               <Video className="w-5 h-5 text-white" />
             </div>
-            <span className="text-gradient">HireVision</span>
+            <span className="text-slate-900">HireVision</span>
           </Link>
           <p className="text-slate-500 mt-2">Create your account</p>
         </div>
@@ -73,7 +73,7 @@ const Register = () => {
                 onClick={() => setRole(value)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   role === value
-                    ? 'bg-white text-brand-700 shadow-sm'
+                    ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -131,7 +131,7 @@ const Register = () => {
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Already have an account?{' '}
-            <Link to="/login" className="text-brand-600 font-semibold hover:underline">
+            <Link to="/login" className="text-slate-900 font-semibold hover:underline">
               Sign in
             </Link>
           </p>

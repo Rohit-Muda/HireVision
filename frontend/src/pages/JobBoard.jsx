@@ -67,7 +67,7 @@ const JobBoard = () => {
     try {
       await api.post('/applications', { jobId });
       setAppliedIds(prev => new Set([...prev, jobId]));
-      toast.success('Applied! AI is matching you to this role...');
+      toast.success('Applied! Matching you to this role...');
     } catch (err) {
       const msg = err.response?.data?.error;
       if (msg?.includes('Already applied')) {
@@ -116,8 +116,8 @@ const JobBoard = () => {
               onClick={() => setFilter(t)}
               className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 filter === t
-                  ? 'bg-brand-600 text-white shadow-md'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600'
+                  ? 'bg-slate-900 text-white shadow-md'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
               }`}
             >
               {TYPE_LABELS[t] || t}
@@ -133,8 +133,8 @@ const JobBoard = () => {
               onClick={() => setExpFilter(l)}
               className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 expFilter === l
-                  ? 'bg-violet-600 text-white shadow-md'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:border-violet-300 hover:text-violet-600'
+                  ? 'bg-slate-900 text-white shadow-md'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
               }`}
             >
               {EXP_LABELS[l] || l}
@@ -175,11 +175,11 @@ const JobBoard = () => {
               >
                 {/* Company */}
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-violet-100 flex items-center justify-center text-brand-700 font-bold text-sm shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm shrink-0">
                     {job.company?.charAt(0)}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1">{job.title}</h3>
+                    <h3 className="font-bold text-slate-900 group-hover:text-slate-700 transition-colors line-clamp-1">{job.title}</h3>
                     <p className="text-sm text-slate-500 truncate">{job.company}</p>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ const JobBoard = () => {
                   <span className="flex items-center gap-1 text-xs text-slate-500">
                     <MapPin className="w-3.5 h-3.5" />{job.location}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">
                     {TYPE_LABELS[job.jobType] || job.jobType}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
@@ -229,7 +229,7 @@ const JobBoard = () => {
                       className={`text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
                         isApplied
                           ? 'bg-emerald-50 text-emerald-600 cursor-default'
-                          : 'bg-brand-600 text-white hover:bg-brand-700 hover:scale-105'
+                          : 'bg-slate-900 text-white hover:bg-slate-800 hover:scale-105'
                       }`}
                     >
                       {isApplied ? '✓ Applied' : applying === job._id ? '...' : 'Apply'}
@@ -247,7 +247,7 @@ const JobBoard = () => {
         {selectedJob && (
           <div className="p-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand-100 to-violet-100 flex items-center justify-center text-brand-700 font-bold text-xl">
+              <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xl">
                 {selectedJob.company?.charAt(0)}
               </div>
               <div>

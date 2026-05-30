@@ -94,7 +94,7 @@ const RecruiterDashboard = () => {
           <div className="card text-center py-16">
             <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500 font-medium">No jobs posted yet</p>
-            <p className="text-slate-400 text-sm mb-4">Post your first job to start receiving AI-matched candidates</p>
+            <p className="text-slate-400 text-sm mb-4">Post your first job to start receiving matched candidates</p>
             <Link to="/recruiter/post-job" className="btn-primary">Post First Job</Link>
           </div>
         ) : (
@@ -103,7 +103,7 @@ const RecruiterDashboard = () => {
               <motion.div key={job._id} variants={fadeUp} className="card hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-violet-100 flex items-center justify-center text-brand-700 font-bold shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold shrink-0">
                       {job.company?.charAt(0)}
                     </div>
                     <div>
@@ -136,7 +136,7 @@ const RecruiterDashboard = () => {
         )}
       </div>
       {/* Find Talent CTA */}
-      <motion.div {...fadeUp} className="mt-6 card bg-gradient-to-r from-brand-50 to-violet-50 border-brand-100">
+      <motion.div {...fadeUp} className="mt-6 card bg-slate-50 border border-slate-200">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-slate-900">Looking for specific talent?</h3>

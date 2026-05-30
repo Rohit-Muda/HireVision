@@ -160,7 +160,7 @@ const JobCandidates = () => {
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Left: candidate info */}
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center text-white text-xl font-bold shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-white text-xl font-bold shrink-0">
                       {candidate.name?.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">

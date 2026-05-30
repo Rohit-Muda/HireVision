@@ -48,7 +48,7 @@ const PostJob = () => {
     setLoading(true);
     try {
       const res = await api.post('/jobs', form);
-      toast.success('Job posted! AI is matching candidates...');
+      toast.success('Job posted! Matching candidates...');
       navigate(`/recruiter/jobs/${res.data.job._id}`);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to post job');
@@ -63,9 +63,9 @@ const PostJob = () => {
     <div className="page-container max-w-3xl mx-auto">
       <motion.div {...fadeUp} className="mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 mb-2">
-          Post a <span className="text-gradient">New Job</span>
+          Post a <span className="text-slate-900">New Job</span>
         </h1>
-        <p className="text-slate-500">AI will automatically match your job to the best candidates.</p>
+        <p className="text-slate-500">Our system will automatically match your job to the best candidates.</p>
       </motion.div>
 
       <motion.form
@@ -162,9 +162,9 @@ const PostJob = () => {
           </label>
           <div className="input-field min-h-[48px] flex flex-wrap gap-2 cursor-text" onClick={() => document.getElementById('skill-input')?.focus()}>
             {form.skillsRequired.map(s => (
-              <span key={s} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-100 text-brand-700 text-sm font-medium">
+              <span key={s} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-medium">
                 {s}
-                <button type="button" onClick={() => removeSkill(s)} className="hover:text-brand-900">
+                <button type="button" onClick={() => removeSkill(s)} className="hover:text-slate-900">
                   <X className="w-3 h-3" />
                 </button>
               </span>

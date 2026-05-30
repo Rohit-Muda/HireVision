@@ -4,8 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   Video, Zap, Briefcase, ChevronRight, BarChart3, Play, FileText,
-  Upload, Download, CheckCircle, Clock, MapPin, GraduationCap,
-  Star, X, Brain, Award, TrendingUp, Target, BookOpen
+  Upload, Download, CheckCircle, Target, BookOpen, Star, Brain, Award, TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -61,11 +60,11 @@ const ProfileCompleteness = ({ hasVideo, hasResume, hasSkills }) => {
     <div className="card mb-6">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-slate-900 text-sm">Profile Completeness</h3>
-        <span className={`text-sm font-bold ${pct === 100 ? 'text-emerald-600' : 'text-brand-600'}`}>{pct}%</span>
+        <span className={`text-sm font-bold ${pct === 100 ? 'text-emerald-600' : 'text-slate-900'}`}>{pct}%</span>
       </div>
       <div className="w-full h-2 bg-slate-100 rounded-full mb-4 overflow-hidden">
         <motion.div
-          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-brand-500 to-violet-500'}`}
+          className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-slate-900'}`}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
@@ -136,7 +135,6 @@ const CandidateDashboard = () => {
     setUploadingResume(true);
     setUploadProgress(0);
 
-    // DEMO OVERRIDE: Simulate upload and fake skills since production backend is failing
     try {
       for (let i = 10; i <= 100; i += 20) {
         setUploadProgress(i);
@@ -166,11 +164,11 @@ const CandidateDashboard = () => {
   };
 
   const stageConfig = {
-    applied:   { label: 'Applied',   color: 'stage-applied' },
-    screened:  { label: 'Screened',  color: 'stage-screened' },
-    interview: { label: 'Interview', color: 'stage-interview' },
-    hired:     { label: 'Hired 🎉',  color: 'stage-hired' },
-    rejected:  { label: 'Rejected',  color: 'stage-rejected' },
+    applied:   { label: 'Applied',   color: 'bg-slate-100 text-slate-700 border-slate-200' },
+    screened:  { label: 'Screened',  color: 'bg-blue-50 text-blue-700 border-blue-200' },
+    interview: { label: 'Interview', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+    hired:     { label: 'Hired',     color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    rejected:  { label: 'Rejected',  color: 'bg-red-50 text-red-700 border-red-200' },
   };
 
   const scoreColor = (score) =>
@@ -189,21 +187,20 @@ const CandidateDashboard = () => {
 
   return (
     <div className="page-container">
-      {/* Fake Top Progress Bar for Demo */}
       {uploadProgress > 0 && (
         <div 
-          className="fixed top-0 left-0 h-1 bg-brand-500 z-[9999] transition-all duration-300" 
-          style={{ width: `${uploadProgress}%`, boxShadow: '0 0 10px rgba(124, 58, 237, 0.5)' }} 
+          className="fixed top-0 left-0 h-1 bg-slate-900 z-[9999] transition-all duration-300" 
+          style={{ width: `${uploadProgress}%` }} 
         />
       )}
 
       {/* Welcome header */}
       <motion.div {...fadeUp} className="mb-6">
         <h1 className="text-3xl font-extrabold text-slate-900">
-          Welcome back, <span className="text-gradient">{user?.name?.split(' ')[0]}</span> 👋
+          Welcome back, <span className="text-slate-900">{user?.name?.split(' ')[0]}</span>
         </h1>
         <p className="text-slate-500 mt-1">
-          {hasVideo ? 'Your AI-powered profile is live and getting matches.' : "Let's build your AI-powered profile to get matched to jobs."}
+          {hasVideo ? 'Your profile is active.' : "Let's build your profile to get matched to jobs."}
         </p>
       </motion.div>
 
@@ -214,14 +211,13 @@ const CandidateDashboard = () => {
 
       {/* ── STATE 1: No video ────────────────────────────────────────────── */}
       {!hasVideo && (
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="card text-center py-16 mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-100 to-violet-100 flex items-center justify-center mx-auto mb-6">
-            <Video className="w-10 h-10 text-brand-600 animate-float" />
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="card text-center py-16 mb-8 border border-slate-200 shadow-sm">
+          <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-6">
+            <Video className="w-10 h-10 text-slate-600" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-3">Build your AI-powered profile</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">Build your video profile</h2>
           <p className="text-slate-500 mb-8 max-w-md mx-auto">
-            Record a 60-second video resume. AI will extract your skills, score your communication,
-            and instantly match you to the best jobs.
+            Record a 60-second video resume to stand out. Our automated system will analyze your communication to match you with top roles.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/record" className="btn-primary text-lg px-8 py-4 gap-3">
@@ -241,17 +237,17 @@ const CandidateDashboard = () => {
         <>
           <motion.div variants={stagger} initial="initial" animate="animate" className="grid md:grid-cols-2 gap-6 mb-6">
             {/* Video player */}
-            <motion.div variants={fadeUp} className="card !p-0 overflow-hidden">
+            <motion.div variants={fadeUp} className="card !p-0 overflow-hidden border border-slate-200">
               <div className="bg-slate-900 aspect-video flex items-center justify-center relative">
                 {user?.videoUrl ? (
                   <video src={user.videoUrl} controls className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-center text-white/60 px-6">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-600 to-violet-600 flex items-center justify-center mx-auto mb-3">
+                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3">
                       <Play className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-sm font-medium text-white/80">Video Resume Analyzed</p>
-                    <p className="text-xs text-white/40 mt-1">AI analysis complete</p>
+                    <p className="text-sm font-medium text-white/80">Video Resume</p>
+                    <p className="text-xs text-white/40 mt-1">Analysis complete</p>
                     {user?.videoTranscript && (
                       <button
                         onClick={() => setTranscriptOpen(true)}
@@ -268,17 +264,17 @@ const CandidateDashboard = () => {
                   <p className="font-semibold text-slate-900">{user?.headline || 'Video Resume'}</p>
                   <p className="text-sm text-slate-500">{user?.location || 'Ready for matching'}</p>
                 </div>
-                <Link to="/record" className="text-sm text-brand-600 font-semibold hover:underline flex items-center gap-1">
+                <Link to="/record" className="text-sm text-slate-600 font-semibold hover:underline flex items-center gap-1">
                   Re-record <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
             </motion.div>
 
-            {/* AI Results */}
-            <motion.div variants={fadeUp} className="card">
+            {/* Analysis Results */}
+            <motion.div variants={fadeUp} className="card border border-slate-200">
               <h3 className="font-bold text-slate-900 mb-5 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-brand-600" />
-                AI Analysis Results
+                <BarChart3 className="w-5 h-5 text-slate-700" />
+                Analysis Results
               </h3>
 
               <div className="flex items-start gap-6 mb-5">
@@ -291,10 +287,10 @@ const CandidateDashboard = () => {
                 </div>
               </div>
 
-              {/* AI Summary */}
+              {/* Summary */}
               {user?.aiSummary && (
-                <div className="p-4 rounded-xl bg-gradient-to-r from-brand-50 to-violet-50 border border-brand-100 mb-4">
-                  <p className="text-sm font-semibold text-brand-700 mb-1">AI Summary</p>
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-4">
+                  <p className="text-sm font-semibold text-slate-700 mb-1">Summary</p>
                   <p className="text-slate-700 text-sm leading-relaxed italic">"{user.aiSummary}"</p>
                 </div>
               )}
@@ -302,7 +298,7 @@ const CandidateDashboard = () => {
               {user?.videoTranscript && (
                 <button
                   onClick={() => setTranscriptOpen(true)}
-                  className="w-full text-sm font-semibold text-brand-600 hover:text-brand-700 border border-brand-200 hover:border-brand-400 py-2.5 rounded-xl transition-all hover:bg-brand-50"
+                  className="w-full text-sm font-semibold text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 py-2.5 rounded-xl transition-all hover:bg-slate-50"
                 >
                   View Full Transcript
                 </button>
@@ -312,9 +308,9 @@ const CandidateDashboard = () => {
 
           {/* ── SKILLS PORTFOLIO ─────────────────────────────────────────── */}
           {(user?.skills?.length > 0) && (
-            <motion.div variants={fadeUp} className="card mb-6">
+            <motion.div variants={fadeUp} className="card mb-6 border border-slate-200">
               <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Star className="w-5 h-5 text-amber-500" />
+                <Star className="w-5 h-5 text-slate-600" />
                 Skills Portfolio
               </h3>
               <div className="space-y-4">
@@ -324,7 +320,7 @@ const CandidateDashboard = () => {
                     <motion.div variants={stagger} className="flex flex-wrap gap-2">
                       {techSkills.map((s) => (
                         <motion.span key={s} variants={fadeUp}
-                          className="px-3 py-1.5 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 text-sm font-semibold hover:bg-brand-100 transition-colors cursor-default"
+                          className="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-colors cursor-default"
                         >{s}</motion.span>
                       ))}
                     </motion.div>
@@ -336,7 +332,7 @@ const CandidateDashboard = () => {
                     <motion.div variants={stagger} className="flex flex-wrap gap-2">
                       {softSkills.map((s) => (
                         <motion.span key={s} variants={fadeUp}
-                          className="px-3 py-1.5 rounded-lg bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold hover:bg-violet-100 transition-colors cursor-default"
+                          className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-100 transition-colors cursor-default"
                         >{s}</motion.span>
                       ))}
                     </motion.div>
@@ -348,9 +344,9 @@ const CandidateDashboard = () => {
 
           {/* Experience Summary */}
           {user?.experienceSummary && (
-            <motion.div variants={fadeUp} className="card mb-6">
+            <motion.div variants={fadeUp} className="card mb-6 border border-slate-200">
               <h3 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-brand-500" />
+                <Briefcase className="w-4 h-4 text-slate-500" />
                 Experience Summary
               </h3>
               <p className="text-slate-600">{user.experienceSummary}</p>
@@ -360,10 +356,10 @@ const CandidateDashboard = () => {
       )}
 
       {/* ── PDF RESUME UPLOAD ─────────────────────────────────────────────── */}
-      <motion.div {...fadeUp} className="card mb-8">
+      <motion.div {...fadeUp} className="card mb-8 border border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-brand-600" />
+            <FileText className="w-5 h-5 text-slate-600" />
             PDF Resume
           </h3>
           {hasResume && (
@@ -371,7 +367,7 @@ const CandidateDashboard = () => {
               href={user.resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-brand-600 font-semibold hover:underline"
+              className="flex items-center gap-1.5 text-sm text-slate-600 font-semibold hover:underline"
             >
               <Download className="w-4 h-4" /> Download
             </a>
@@ -379,11 +375,11 @@ const CandidateDashboard = () => {
         </div>
 
         {hasResume ? (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
             <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-emerald-800">Resume uploaded</p>
-              <p className="text-xs text-emerald-600 truncate">{user.resumeUrl?.split('/').pop()}</p>
+              <p className="text-sm font-semibold text-slate-800">Resume uploaded</p>
+              <p className="text-xs text-slate-500 truncate">{user.resumeUrl?.split('/').pop()}</p>
             </div>
             <button
               onClick={() => resumeInputRef.current?.click()}
@@ -395,14 +391,14 @@ const CandidateDashboard = () => {
         ) : (
           <div
             onClick={() => resumeInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-all group"
+            className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-slate-300 hover:bg-slate-50 transition-all group"
           >
-            <Upload className="w-8 h-8 text-slate-300 group-hover:text-brand-500 mx-auto mb-3 transition-colors" />
-            <p className="font-semibold text-slate-600 group-hover:text-brand-700">Click to upload PDF resume</p>
+            <Upload className="w-8 h-8 text-slate-300 group-hover:text-slate-500 mx-auto mb-3 transition-colors" />
+            <p className="font-semibold text-slate-600 group-hover:text-slate-800">Click to upload PDF resume</p>
             <p className="text-sm text-slate-400 mt-1">PDF only · Max 5MB</p>
             {uploadingResume && (
-              <div className="mt-3 flex items-center justify-center gap-2 text-brand-600 text-sm">
-                <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+              <div className="mt-3 flex items-center justify-center gap-2 text-slate-600 text-sm">
+                <div className="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
                 Uploading…
               </div>
             )}
@@ -421,7 +417,7 @@ const CandidateDashboard = () => {
       {/* ── APPLICATIONS ────────────────────────────────────────────────── */}
       <div className="mt-2">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="section-heading mb-0">My Applications</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-0">My Applications</h2>
           <Link to="/jobs" className="btn-primary text-sm py-2 px-4">
             <Briefcase className="w-4 h-4" />
             Browse Jobs
@@ -431,14 +427,14 @@ const CandidateDashboard = () => {
         {loadingApps ? (
           <div className="grid gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="card animate-pulse">
-                <div className="h-4 skeleton w-48 mb-3" />
-                <div className="h-3 skeleton w-32" />
+              <div key={i} className="card animate-pulse border border-slate-200">
+                <div className="h-4 bg-slate-200 rounded w-48 mb-3" />
+                <div className="h-3 bg-slate-200 rounded w-32" />
               </div>
             ))}
           </div>
         ) : applications.length === 0 ? (
-          <div className="card text-center py-12">
+          <div className="card text-center py-12 border border-slate-200">
             <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500 font-medium">No applications yet</p>
             <p className="text-slate-400 text-sm mb-4">Browse open jobs and apply with one click</p>
@@ -447,7 +443,7 @@ const CandidateDashboard = () => {
         ) : (
           <motion.div variants={stagger} initial="initial" animate="animate" className="grid gap-4">
             {applications.map((app) => (
-              <motion.div key={app._id} variants={fadeUp} className="card flex flex-wrap items-center gap-4">
+              <motion.div key={app._id} variants={fadeUp} className="card flex flex-wrap items-center gap-4 border border-slate-200">
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-slate-900 truncate">{app.jobId?.title}</h4>
                   <p className="text-sm text-slate-500">{app.jobId?.company} · {app.jobId?.location}</p>
@@ -457,9 +453,9 @@ const CandidateDashboard = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   {app.matchScore > 0 && (
-                    <span className={`text-sm font-bold px-3 py-1 rounded-full border ${scoreColor(app.matchScore)}`}>
-                      {Math.round(app.matchScore)}% match
-                    </span>
+                     <span className={`text-sm font-bold px-3 py-1 rounded-full border ${scoreColor(app.matchScore)}`}>
+                       {Math.round(app.matchScore)}% match
+                     </span>
                   )}
                   <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${stageConfig[app.stage]?.color}`}>
                     {stageConfig[app.stage]?.label}
@@ -471,42 +467,42 @@ const CandidateDashboard = () => {
         )}
       </div>
 
-      {/* ── AI Career Path ─────────────────────────────────────────────────── */}
+      {/* ── Career Path ─────────────────────────────────────────────────── */}
       {hasVideo && user?.careerRecommendations?.topJobCategories?.length > 0 && (
-        <motion.div {...fadeUp} className="card mb-6">
+        <motion.div {...fadeUp} className="card mb-6 mt-8 border border-slate-200">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-              <TrendingUp size={16} className="text-purple-600" />
+            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+              <TrendingUp size={16} className="text-slate-600" />
             </div>
-            <h3 className="font-bold text-slate-900">Your AI Career Path</h3>
-            <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full">AI Generated</span>
+            <h3 className="font-bold text-slate-900">Career Path</h3>
+            <span className="text-xs bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full">Auto Generated</span>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
-            <div className="bg-blue-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Target size={12} /> Best Fit Roles</p>
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+              <p className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Target size={12} /> Best Fit Roles</p>
               <ul className="space-y-1">
                 {(user.careerRecommendations.topJobCategories || []).map((cat, i) => (
-                  <li key={i} className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />{cat}
+                  <li key={i} className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full flex-shrink-0" />{cat}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="bg-green-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-green-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Zap size={12} /> Skills to Learn</p>
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+              <p className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Zap size={12} /> Skills to Learn</p>
               <ul className="space-y-1">
                 {(user.careerRecommendations.skillsToLearn || []).map((skill, i) => (
-                  <li key={i} className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />{skill}
+                  <li key={i} className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full flex-shrink-0" />{skill}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="bg-amber-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-amber-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Brain size={12} /> Career Advice</p>
-              <p className="text-sm text-gray-800">{user.careerRecommendations.careerAdvice}</p>
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+              <p className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Brain size={12} /> Advice</p>
+              <p className="text-sm text-slate-800">{user.careerRecommendations.careerAdvice}</p>
               {user.careerRecommendations.salaryPotential && (
-                <p className="text-xs text-amber-700 font-semibold mt-2">💰 {user.careerRecommendations.salaryPotential}</p>
+                <p className="text-xs text-slate-600 font-semibold mt-2">Expected Salary: {user.careerRecommendations.salaryPotential}</p>
               )}
             </div>
           </div>
@@ -515,17 +511,17 @@ const CandidateDashboard = () => {
 
       {/* ── Skill Badges ────────────────────────────────────────────────────── */}
       {hasVideo && (
-        <motion.div {...fadeUp} className="card mb-6">
+        <motion.div {...fadeUp} className="card mb-6 border border-slate-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                <Award size={16} className="text-amber-600" />
+              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                <Award size={16} className="text-slate-600" />
               </div>
-              <h3 className="font-bold text-slate-900">Skill Badges</h3>
-              <span className="text-xs text-gray-400">Verified by AI quiz</span>
+              <h3 className="font-bold text-slate-900">Skill Assessments</h3>
+              <span className="text-xs text-slate-400">Verified by assessment</span>
             </div>
             <button onClick={() => setShowAssessment(!showAssessment)}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1">
               <BookOpen size={14} /> {showAssessment ? 'Hide' : 'Take Assessment'}
             </button>
           </div>
@@ -535,21 +531,21 @@ const CandidateDashboard = () => {
             <div className="flex flex-wrap gap-2 mb-4">
               {user.skillBadges.map((badge, i) => (
                 <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${
-                  badge.score >= 4 ? 'bg-green-50 text-green-700 border-green-200' :
-                  badge.score >= 3 ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                  'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                  badge.score >= 4 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                  badge.score >= 3 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                  'bg-slate-50 text-slate-600 border-slate-200'}`}>
                   <Award size={13} />{badge.skill}
                   <span className="text-xs opacity-70">{badge.score}/{badge.total}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 mb-4">No badges yet. Take an assessment to prove your skills to recruiters.</p>
+            <p className="text-sm text-slate-400 mb-4">No assessments completed yet.</p>
           )}
 
           {/* Assessment panel */}
           {showAssessment && (
-            <div className="border-t border-gray-100 pt-4">
+            <div className="border-t border-slate-100 pt-4 mt-2">
               <SkillAssessment skills={user?.skills || []} onBadgeEarned={handleBadgeEarned} />
             </div>
           )}
@@ -564,7 +560,7 @@ const CandidateDashboard = () => {
               {user?.videoTranscript || 'No transcript available.'}
             </p>
           </div>
-          <p className="text-xs text-slate-400 mt-3">Transcribed by AI analysis</p>
+          <p className="text-xs text-slate-400 mt-3">Automated transcription</p>
         </div>
       </Modal>
     </div>
