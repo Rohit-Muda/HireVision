@@ -42,14 +42,7 @@ const authLimiter = rateLimit({
   validate: false,
 });
 
-const videoAnalysisLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10,
-  message: { error: 'Video analysis limit reached. You can analyze 10 videos per hour.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  validate: false,
-});
+
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

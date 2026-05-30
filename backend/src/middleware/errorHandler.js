@@ -15,7 +15,7 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({ error: 'Invalid ID format' });
   }
 
-  if (err.message === 'Only video files are allowed') {
+  if (err.message && err.message.includes('Only video files are allowed')) {
     return res.status(400).json({ error: err.message });
   }
 

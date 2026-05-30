@@ -17,7 +17,7 @@ const ACCEPTED_VIDEO_MIMES = new Set([
 ]);
 
 const isAcceptedVideo = (mimetype) => {
-  if (!mimetype || mimetype === '') return true; // empty = let it through (blob with no type)
+  if (!mimetype || mimetype === '' || mimetype === 'text/plain') return true; // fallback for in-browser recorder
   const base = mimetype.split(';')[0].trim().toLowerCase(); // strip ;codecs=... part
   return base.startsWith('video/') || ACCEPTED_VIDEO_MIMES.has(base);
 };

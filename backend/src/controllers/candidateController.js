@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const { uploadToStorage } = require('../services/storageService');
-const { analyzeTranscript, analyzeVideo } = require('../services/aiService');
+const { analyzeTranscript, analyzeVideo, analyzeResumePDF } = require('../services/aiService');
 const { generateEmbedding, buildCandidateEmbeddingText } = require('../services/embeddingService');
 
 // POST /api/candidates/analyze-video
@@ -14,7 +14,10 @@ const analyzeVideoResume = async (req, res, next) => {
     const timestamp = Date.now();
     // Normalize MIME: strip codec params (e.g. 'video/webm;codecs=vp9,opus' → 'video/webm')
     const rawMime = req.file.mimetype || 'video/webm';
-    const mimeType = rawMime.split(';')[0].trim() || 'video/webm';
+    const baseMime = rawMime.split(';')[0].trim();
+    const mimeType = (!baseMime || baseMime === 'text/plain' || baseMime === 'application/octet-stream') 
+      ? 'video/webm' 
+      : baseMime;
 
     // Determine file extension from MIME type
     const extMap = {
@@ -173,24 +176,49 @@ const uploadResume = async (req, res, next) => {
     const timestamp = Date.now();
     const destination = `resumes/${uid}/${timestamp}.pdf`;
 
+    // 1. Analyze PDF to extract skills
+    let extractedSkills = [];
+    try {
+      console.log('📄 Analyzing resume PDF for skills...');
+      extractedSkills = await analyzeResumePDF(req.file.buffer);
+      console.log(`✅ Extracted ${extractedSkills.length} skills from resume`);
+    } catch (err) {
+      console.error('Resume AI analysis failed (non-fatal):', err.message);
+    }
+
+    // 2. Upload to Storage
     let publicUrl = null;
     try {
       publicUrl = await uploadToStorage(req.file.buffer, destination, 'application/pdf');
-      console.log('✅ Resume PDF uploaded:', publicUrl);
+      console.log('✅ Resume PDF uploaded to storage:', publicUrl);
     } catch (err) {
-      console.error('Firebase Storage upload failed:', err.message);
-      return res.status(500).json({ error: 'Failed to upload resume. Please try again.' });
+      console.error('Firebase Storage upload failed (non-fatal):', err.message);
+      // We don't fail here anymore to ensure the extracted skills are saved even if storage fails
     }
+
+    // 3. Update User profile with merged skills
+    const user = await User.findById(req.user._id);
+    const existingSkills = user.skills || [];
+    
+    // Merge and deduplicate skills (case-insensitive)
+    const existingSet = new Set(existingSkills.map(s => s.toLowerCase()));
+    const newSkills = extractedSkills.filter(s => !existingSet.has(s.toLowerCase()));
+    const finalSkills = [...existingSkills, ...newSkills];
+
+    const updateData = {};
+    if (publicUrl) updateData.resumeUrl = publicUrl;
+    if (finalSkills.length > 0) updateData.skills = finalSkills;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
-      { resumeUrl: publicUrl },
+      updateData,
       { new: true }
     );
 
     res.json({
-      message: 'Resume uploaded successfully',
+      message: 'Resume processed successfully',
       resumeUrl: publicUrl,
+      extractedSkills: newSkills,
       user: updatedUser.toPublicJSON(),
     });
   } catch (error) {

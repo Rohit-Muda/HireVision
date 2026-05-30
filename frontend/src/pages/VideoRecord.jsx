@@ -272,21 +272,14 @@ const VideoRecord = () => {
     });
 
     try {
-      // ── Determine MIME type explicitly (MediaRecorder may produce empty type) ──
-      // If blob type is empty string or text/plain, browsers send it as text/plain via FormData.
-      // Force an explicit MIME type to ensure multer accepts it.
-      const blobMime = (!videoBlob.type || videoBlob.type === 'text/plain' || videoBlob.type === '')
-        ? 'video/webm'
-        : videoBlob.type;
-      const ext = blobMime.includes('mp4') ? 'mp4' : blobMime.includes('mov') ? 'mov' : 'webm';
-
-      // Create a typed blob so FormData sends the correct Content-Type part header
-      const typedBlob = blobMime === videoBlob.type
-        ? videoBlob
-        : new Blob([videoBlob], { type: blobMime });
+      // Force a proper MIME type — File constructor guarantees correct Content-Type
+      // in multipart/form-data part headers (unlike Blob which can send text/plain)
+      const mime = videoBlob.type?.startsWith('video/') ? videoBlob.type.split(';')[0] : 'video/webm';
+      const ext = mime.includes('mp4') ? 'mp4' : mime.includes('mov') ? 'mov' : 'webm';
+      const file = new File([videoBlob], `resume.${ext}`, { type: mime });
 
       const formData = new FormData();
-      formData.append('video', typedBlob, `resume.${ext}`);
+      formData.append('video', file);
 
       // ✅ Attach browser transcript — backend uses text-only analysis (100x cheaper)
       const capturedTranscript = transcriptRef.current.trim();

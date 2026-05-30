@@ -221,16 +221,17 @@ const analyzeTranscript = async (transcript) => {
 // ─── FALLBACK: Full video analysis via Gemini File API ───────────────────────
 // Only used when browser Speech API is unavailable (Firefox/Safari)
 
-const uploadBufferToGeminiFileApi = async (videoBuffer, mimeType, apiKey) => {
+const uploadBufferToGeminiFileApi = async (fileBuffer, mimeType, apiKey) => {
   const extMap = {
     'video/webm': 'webm', 'video/mp4': 'mp4', 'video/quicktime': 'mov',
     'video/x-msvideo': 'avi', 'video/ogg': 'ogv',
+    'application/pdf': 'pdf',
   };
   const ext = extMap[mimeType] || 'webm';
   const tmpPath = path.join(os.tmpdir(), `hv_${Date.now()}.${ext}`);
 
-  fs.writeFileSync(tmpPath, videoBuffer);
-  console.log(`📤 Uploading ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB to Gemini File API...`);
+  fs.writeFileSync(tmpPath, fileBuffer);
+  console.log(`📤 Uploading ${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB to Gemini File API...`);
 
   try {
     const fileManager = new GoogleAIFileManager(apiKey);
@@ -288,6 +289,36 @@ const analyzeVideo = async (videoBuffer, mimeType = 'video/webm') => {
     const parsed = parseGeminiJSON(result.response.text());
     parsed._analysisMode = 'video';
     return normalizeAnalysis(parsed, 'gemini-video');
+  });
+};
+
+// ─── PDF Resume Analysis via Gemini File API ─────────────────────────────────
+
+const analyzeResumePDF = async (pdfBuffer) => {
+  const prompt = `Analyze this candidate's resume. Extract the most important professional skills, technologies, and keywords.
+Return ONLY a valid JSON object:
+{
+  "skills": ["<skill1>", "<skill2>", "<skill3>"]
+}`;
+
+  return withGeminiRotation(async (genAI, apiKey) => {
+    const fileUri = await uploadBufferToGeminiFileApi(pdfBuffer, 'application/pdf', apiKey);
+
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction: 'You are an expert HR analyst. Always respond with valid JSON only.',
+    });
+    
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{ fileData: { mimeType: 'application/pdf', fileUri } }, { text: prompt }],
+      }],
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+    
+    const parsed = parseGeminiJSON(result.response.text());
+    return parsed.skills || [];
   });
 };
 
@@ -453,4 +484,5 @@ module.exports = {
   generateInterviewQuestions,
   evaluateInterviewAnswers,
   generateSkillQuiz,
+  analyzeResumePDF,
 };
